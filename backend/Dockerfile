@@ -9,6 +9,9 @@ COPY gradle gradle
 # Download dependencies
 RUN ./gradlew dependencies --no-daemon || return 0
 
+# add gradlew authority
+RUN chmod +x gradlew
+
 # Copy source code
 COPY src src
 
