@@ -20,7 +20,7 @@ jobs:
           host: ${{ secrets.JCLOUD_HOST }}
           username: ${{ secrets.JCLOUD_USERNAME }}
           key: ${{ secrets.JCLOUD_SSH_KEY }}
-          port: 22
+          port: 19230
           script: |
             echo "========================================="
             echo "Starting Deployment to JCloud"
