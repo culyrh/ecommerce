@@ -22,11 +22,6 @@ RUN gradle clean bootJar --no-daemon
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# add curl install
-RUN apt-get update && \
-    apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/*
-
 # Create non-root user
 RUN groupadd -r spring && useradd -r -g spring spring
 USER spring:spring
@@ -36,10 +31,6 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s \
-  CMD curl -f http://localhost:8080/health || exit 1
 
 # Run application
 ENTRYPOINT ["java", "-jar", "app.jar"]
