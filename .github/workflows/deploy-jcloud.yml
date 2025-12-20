@@ -1,0 +1,87 @@
+name: Deploy to JCloud
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - 'docker-compose.yml'
+      - '.env.example'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to JCloud Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.JCLOUD_HOST }}
+          username: ${{ secrets.JCLOUD_USERNAME }}
+          key: ${{ secrets.JCLOUD_SSH_KEY }}
+          port: 22
+          script: |
+            echo "========================================="
+            echo "Starting Deployment to JCloud"
+            echo "========================================="
+            
+            # 프로젝트 디렉토리로 이동
+            cd ${{ secrets.JCLOUD_PATH }}
+            
+            # 현재 브랜치 확인
+            echo "Current branch: $(git branch --show-current)"
+            
+            # 최신 코드 가져오기
+            echo "🔄 Pulling latest code from GitHub..."
+            git fetch origin
+            git reset --hard origin/main
+            
+            # .env 파일 존재 확인
+            if [ ! -f .env ]; then
+              echo "WARNING: .env file not found!"
+              echo "Please create .env file with production settings"
+              exit 1
+            fi
+            
+            # Docker 컨테이너 중지
+            echo "Stopping existing containers..."
+            docker-compose down
+            
+            # Docker 이미지 빌드 및 컨테이너 시작
+            echo "Building Docker images..."
+            docker-compose build --no-cache backend
+            
+            echo "Starting containers..."
+            docker-compose up -d
+            
+            # 잠시 대기 (컨테이너 시작 대기)
+            echo "Waiting for services to start..."
+            sleep 10
+            
+            # 컨테이너 상태 확인
+            echo "========================================="
+            echo "Container Status:"
+            echo "========================================="
+            docker-compose ps
+            
+            # 백엔드 로그 확인 (최근 20줄)
+            echo "========================================="
+            echo "Backend Logs (last 20 lines):"
+            echo "========================================="
+            docker-compose logs --tail=20 backend
+            
+            # Health Check
+            echo "========================================="
+            echo "Health Check:"
+            echo "========================================="
+            sleep 5
+            curl -f http://localhost:8080/health || echo "⚠️ Health check failed"
+            
+            # 사용하지 않는 Docker 이미지 정리
+            echo "Cleaning up unused Docker images..."
+            docker image prune -f
+            
+            echo "========================================="
+            echo "Deployment Completed Successfully!"
+            echo "========================================="
