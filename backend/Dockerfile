@@ -16,11 +16,16 @@ RUN chmod +x gradlew
 COPY src src
 
 # Build application
-RUN ./gradlew bootJar --no-daemon
+RUN gradle clean bootJar --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:17-jre
 WORKDIR /app
+
+# add curl install
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN groupadd -r spring && useradd -r -g spring spring
