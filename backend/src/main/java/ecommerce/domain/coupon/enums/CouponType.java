@@ -1,4 +1,7 @@
 package ecommerce.domain.coupon.enums;
 
-public class CouponType {
+public enum CouponType {
+    WELCOME,
+    BIRTHDAY,
+    VIP
 }

@@ -1,4 +1,6 @@
 package ecommerce.domain.product.enums;
 
-public class ProductStatus {
+public enum ProductStatus {
+    ACTIVE,
+    OUT_OF_STOCK
 }

@@ -1,4 +1,7 @@
 package ecommerce.domain.notification.enums;
 
-public class NotificationType {
+public enum NotificationType {
+    ORDER,
+    RESTOCK,
+    COUPON
 }

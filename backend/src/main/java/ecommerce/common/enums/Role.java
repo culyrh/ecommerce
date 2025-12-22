@@ -1,4 +1,7 @@
 package ecommerce.common.enums;
 
-public class Role {
+public enum Role {
+    ROLE_USER,
+    ROLE_SELLER,
+    ROLE_ADMIN
 }

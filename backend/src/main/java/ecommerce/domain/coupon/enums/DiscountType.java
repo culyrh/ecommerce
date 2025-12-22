@@ -1,4 +1,6 @@
 package ecommerce.domain.coupon.enums;
 
-public class DiscountType {
+public enum DiscountType {
+    PERCENTAGE,
+    FIXED_AMOUNT
 }

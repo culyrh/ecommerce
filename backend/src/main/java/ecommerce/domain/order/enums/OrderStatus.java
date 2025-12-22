@@ -1,4 +1,9 @@
 package ecommerce.domain.order.enums;
 
-public class OrderStatus {
+public enum OrderStatus {
+    PENDING,
+    PAID,
+    SHIPPED,
+    DELIVERED,
+    CANCELLED
 }
