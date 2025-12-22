@@ -24,6 +24,29 @@ repositories {
 	mavenCentral()
 }
 
+bootRun {
+	// .env 파일을 환경 변수로 설정
+	def envFile = file('.env')
+	println "=== .env file exists: ${envFile.exists()}"
+	println "=== .env file path: ${envFile.absolutePath}"
+
+	if (envFile.exists()) {
+		def envMap = [:]
+		envFile.readLines().findAll {
+			it.trim() && !it.startsWith('#') && it.contains('=')
+		}.each {
+			def (key, value) = it.split('=', 2)
+			def k = key.trim()
+			def v = value.trim()
+			envMap[k] = v
+			println "=== Loaded: ${k} = ${v}"
+		}
+		environment envMap
+	} else {
+		println "=== .env file NOT FOUND!"
+	}
+}
+
 dependencies {
 	// Spring Boot Starters
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
