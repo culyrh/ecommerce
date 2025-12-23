@@ -23,7 +23,10 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Create non-root user
-RUN groupadd -r spring && useradd -r -g spring spring
+RUN mkdir -p /app/logs && \
+    groupadd -r spring && \
+    useradd -r -g spring spring && \
+    chown -R spring:spring /app
 USER spring:spring
 
 # Copy JAR from builder
