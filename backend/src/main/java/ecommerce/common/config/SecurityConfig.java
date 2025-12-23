@@ -61,10 +61,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/notifications").hasRole("ADMIN")
 
                         // SELLER 전용 경로
-                        .requestMatchers("/api/sellers/**").hasAnyRole("SELLER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("SELLER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/sellers").hasAnyRole("USER", "SELLER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("SELLER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("SELLER", "ADMIN")
+                        .requestMatchers("/api/sellers/**").hasAnyRole("SELLER", "ADMIN")
 
                         // USER 전용 경로
                         .requestMatchers("/api/users/me/**").hasAnyRole("USER", "SELLER", "ADMIN")
