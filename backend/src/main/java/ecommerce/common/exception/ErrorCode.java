@@ -33,6 +33,8 @@ public enum ErrorCode {
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "주문을 찾을 수 없습니다"),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND", "리뷰를 찾을 수 없습니다"),
     COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "COUPON_NOT_FOUND", "쿠폰을 찾을 수 없습니다"),
+    VOTE_NOT_FOUND(HttpStatus.NOT_FOUND, "VOTE_NOT_FOUND", "투표를 찾을 수 없습니다"),
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "알림을 찾을 수 없습니다"),
 
     // 409 Conflict
     DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "DUPLICATE_RESOURCE", "중복된 리소스입니다"),
@@ -40,6 +42,7 @@ public enum ErrorCode {
     DUPLICATE_BUSINESS_NUMBER(HttpStatus.CONFLICT, "DUPLICATE_BUSINESS_NUMBER", "이미 등록된 사업자 번호입니다"),
     DUPLICATE_VOTE(HttpStatus.CONFLICT, "DUPLICATE_VOTE", "이미 투표하셨습니다"),
     DUPLICATE_NOTIFICATION(HttpStatus.CONFLICT, "DUPLICATE_NOTIFICATION", "이미 알림 신청하셨습니다"),
+    DUPLICATE_NOTIFICATION_REQUEST(HttpStatus.CONFLICT, "DUPLICATE_NOTIFICATION_REQUEST", "이미 재입고 알림을 신청하셨습니다"),
     STATE_CONFLICT(HttpStatus.CONFLICT, "STATE_CONFLICT", "리소스 상태 충돌"),
     INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "INSUFFICIENT_STOCK", "재고가 부족합니다"),
 

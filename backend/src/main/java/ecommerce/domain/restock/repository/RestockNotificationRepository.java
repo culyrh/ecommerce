@@ -1,6 +1,8 @@
 package ecommerce.domain.restock.repository;
 
+import ecommerce.domain.product.entity.Product;
 import ecommerce.domain.restock.entity.RestockNotification;
+import ecommerce.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +23,13 @@ public interface RestockNotificationRepository extends JpaRepository<RestockNoti
     boolean existsByProductIdAndUserId(Long productId, Long userId);
 
     List<RestockNotification> findByProductIdAndIsNotifiedFalse(Long productId);
+
+    // 추가 메서드
+    boolean existsByUserAndProduct(User user, Product product);
+
+    Page<RestockNotification> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+
+    Page<RestockNotification> findByProductOrderByCreatedAtDesc(Product product, Pageable pageable);
+
+    List<RestockNotification> findByProductAndIsNotifiedFalse(Product product);
 }
