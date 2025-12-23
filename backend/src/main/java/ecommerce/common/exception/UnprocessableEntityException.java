@@ -1,7 +1,7 @@
 package ecommerce.common.exception;
 
 public class UnprocessableEntityException extends BusinessException {
-    public UnprocessableEntityException(String message) {
+    public UnprocessableEntityException(ErrorCode externalApiError, String message) {
         super(ErrorCode.UNPROCESSABLE_ENTITY, message);
     }
 
