@@ -1,4 +1,11 @@
 package ecommerce.common.exception;
 
-public class ForbiddenException {
+public class ForbiddenException extends BusinessException {
+    public ForbiddenException(String message) {
+        super(ErrorCode.FORBIDDEN, message);
+    }
+
+    public ForbiddenException(ErrorCode errorCode) {
+        super(errorCode);
+    }
 }
