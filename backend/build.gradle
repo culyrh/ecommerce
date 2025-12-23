@@ -72,7 +72,7 @@ dependencies {
 	implementation 'com.google.firebase:firebase-admin:9.2.0'
 
 	// Swagger/OpenAPI
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14'
 
 	// HTTP Client (네이버 API)
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
