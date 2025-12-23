@@ -1,7 +1,7 @@
 package ecommerce.common.exception;
 
 public class UnauthorizedException extends BusinessException {
-    public UnauthorizedException(String message) {
+    public UnauthorizedException(ErrorCode forbidden, String message) {
         super(ErrorCode.UNAUTHORIZED, message);
     }
 
