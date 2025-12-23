@@ -55,25 +55,30 @@
 └────────────────────────────────┘
 ```
 
+<br>
+
 ---
 
 - gradlew 실행 권한 문제
-    - -> gradlew에 chmod +x
-    - -> 도커파일에 gradle 명령어 추가
+    - gradlew에 chmod +x
+    - 도커파일에 gradle 명령어 추가
+
 
 - Gradle wrapper 타임아웃
-    - -> gradle 8.5로 버전 수정
+    - gradle 8.5로 버전 수정
+
 
 - curl 설치 실패
-    - -> 도커파일에서 Health check 제거하고 docker-compose로 실행
+    - 도커파일에서 Health check 제거하고 docker-compose로 실행
+
 
 - SSH 포트
-    - -> 19230 설정
+    - 19230 설정
 
-- OAuth2 리다이렉트
-    - -> SecurityConfig 추가하여 임시로 접근 허용
 
 - GitHub Actions
-    - -> (ci) 빌드, 테스트 자동화
-    - -> (cd) Deploy to JCloud 설정하여 깃 변경사항이 서버에 자동으로 반영
+    - (ci) 빌드, 테스트 자동화
+    - (cd) Deploy to JCloud 설정하여 깃 변경사항이 서버에 자동으로 반영
 
+
+- swagger 버전 수정 (2.8.14)

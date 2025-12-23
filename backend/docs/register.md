@@ -73,6 +73,8 @@ private User findOrCreateUser(OAuth2UserInfo userInfo) {
 - is_active: true (소프트 삭제 플래그)
 ```
 
+<br>
+
 #### 유니크 제약
 
 - 이메일 유니크: 중복 가입 방지
@@ -85,6 +87,8 @@ private User findOrCreateUser(OAuth2UserInfo userInfo) {
 })
 ```
 
+<br>
+
 #### 인덱스
 
 - 이메일 인덱스 (로그인 시 빠른 조회)
@@ -93,23 +97,4 @@ private User findOrCreateUser(OAuth2UserInfo userInfo) {
 ```
 @Index(name = "idx_users_email", columnList = "email")
 @Index(name = "idx_users_role", columnList = "role")
-```
-
-<br>
-
-### 트랜잭션
-
-- 읽기 전용 (readOnly = true)
-  - DB 락 없음
-
-- 쓰기 트랜잭션
-  - 회원가입 실패 시 롤백
-
-```
-// AuthService.java
-@Transactional(readOnly = true)
-public TokenResponse login(LoginRequest request) { ... }
-
-@Transactional
-public TokenResponse register(RegisterRequest request) { ... }
 ```

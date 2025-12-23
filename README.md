@@ -1,3 +1,3 @@
 - http://113.198.66.68:10230
 - http://113.198.66.68:10230/health
-- http://113.198.66.68:10230/swagger-ui.html
+- http://113.198.66.68:10230/swagger-ui/index.html
