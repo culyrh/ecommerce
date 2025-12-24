@@ -43,7 +43,10 @@ public class SeedDataService {
 
     private final Random random = new Random();
 
-    @PostConstruct
+    //@PostConstruct
+    /* 서버부팅 시 네이버 API 호출하지 않음
+       seed 수동 실행용 controller 추가 (SeedController)
+     */
     @Transactional
     public void generateSeedData() {
         // 이미 충분한 데이터가 있으면 스킵
