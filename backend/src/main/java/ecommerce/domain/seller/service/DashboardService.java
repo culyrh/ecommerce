@@ -1,6 +1,4 @@
 package ecommerce.domain.seller.service;
-import ecommerce.domain.user.entity.User;
-import ecommerce.domain.user.repository.UserRepository;
 
 import ecommerce.common.exception.ErrorCode;
 import ecommerce.common.exception.ResourceNotFoundException;
@@ -15,6 +13,8 @@ import ecommerce.domain.review.repository.ReviewRepository;
 import ecommerce.domain.seller.dto.DashboardResponse;
 import ecommerce.domain.seller.entity.Seller;
 import ecommerce.domain.seller.repository.SellerRepository;
+import ecommerce.domain.user.entity.User;
+import ecommerce.domain.user.repository.UserRepository;
 import ecommerce.infrastructure.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class DashboardService {
 
-    private final UserRepository userRepository;
     private final SellerRepository sellerRepository;
+    private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
