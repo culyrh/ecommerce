@@ -1,7 +1,9 @@
 package ecommerce.domain.seller.controller;
 
+import ecommerce.domain.seller.dto.DashboardResponse;
 import ecommerce.domain.seller.dto.SellerRequest;
 import ecommerce.domain.seller.dto.SellerResponse;
+import ecommerce.domain.seller.service.DashboardService;
 import ecommerce.domain.seller.service.SellerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 public class SellerController {
 
     private final SellerService sellerService;
+    private final DashboardService dashboardService; // 의존성 주입 추가 필요
 
     @PostMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
@@ -90,5 +93,20 @@ public class SellerController {
         log.info("DELETE /api/sellers/me - email: {}", email);
         sellerService.deleteMySeller(email);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me/dashboard")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    @Operation(summary = "판매자 대시보드 조회", description = "판매자의 통계 대시보드를 조회합니다")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @ApiResponse(responseCode = "401", description = "인증 실패", content = @Content)
+    @ApiResponse(responseCode = "403", description = "권한 없음", content = @Content)
+    @ApiResponse(responseCode = "404", description = "판매자 정보를 찾을 수 없음", content = @Content)
+    public ResponseEntity<DashboardResponse> getDashboard(
+            @Parameter(hidden = true) @AuthenticationPrincipal String email
+    ) {
+        log.info("GET /api/sellers/me/dashboard - email: {}", email);
+        DashboardResponse response = dashboardService.getDashboard(email);
+        return ResponseEntity.ok(response);
     }
 }
