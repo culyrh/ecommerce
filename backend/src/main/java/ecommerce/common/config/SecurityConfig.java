@@ -59,6 +59,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers("/api/coupons/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/notifications").hasRole("ADMIN")
+                        .requestMatchers("/internal/seed").hasRole("ADMIN")
 
                         // SELLER 전용 경로
                         .requestMatchers(HttpMethod.POST, "/api/sellers").hasAnyRole("USER", "SELLER", "ADMIN")
