@@ -24,13 +24,9 @@ public class SeedController {
     @Operation(
             summary = "시드 데이터 생성",
             description = """
-            ⚠ 배포 환경에서는 비활성화됨
+            ⚠ JCloud 서버의 TLS outbound 제약으로 네이버 쇼핑 API 호출 불가
             
-            - JCloud 서버의 TLS outbound 제약으로 네이버 쇼핑 API 호출 불가
-            
-            - 배포 전에 로컬에서 생성한 JSON 파일(naver_products.json)을 사용
-            
-            - 로컬 환경에서만 실행 가능합니다.
+            - 배포 전에 로컬에서 생성한 JSON 파일(naver_products.json)을 적용
             """
     )
     public ResponseEntity<Map<String, String>> seed() {
