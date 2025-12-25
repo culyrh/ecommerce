@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import firebaseAuth from '../firebaseInit';
+import apiService from '../services/api';
+import { saveTokens } from '../utils/auth';
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -11,7 +15,7 @@ const LoginPage = () => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
     const NAVER_CLIENT_ID = process.env.REACT_APP_NAVER_CLIENT_ID;
 
-    // 일반 로그인
+    // 일반 로그인 (수정 필요한 부분)
     const handleEmailLogin = async (e) => {
         e.preventDefault();
         setError('');
@@ -31,11 +35,10 @@ const LoginPage = () => {
             }
 
             const data = await response.json();
-            
-            // JWT 토큰 저장
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
-            
+        
+            // 수정 후:
+            saveTokens(data);
+        
             alert('로그인 성공!');
             navigate('/');
         } catch (err) {
@@ -60,9 +63,36 @@ const LoginPage = () => {
         window.location.href = naverAuthUrl;
     };
 
-    // Firebase 로그인 (준비 중)
-    const handleFirebaseLogin = () => {
-        alert('Firebase 로그인은 준비 중입니다.');
+    // Firebase 로그인 (신규 추가)
+    const handleFirebaseLogin = async () => {
+        if (!email || !password) {
+            setError('이메일과 비밀번호를 입력해주세요.');
+            return;
+        }
+
+        setError('');
+        setLoading(true);
+
+        try {
+            // 1. Firebase로 로그인
+            const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
+            const idToken = await userCredential.user.getIdToken();
+            
+            console.log('✅ Firebase 로그인 성공');
+
+            // 2. 백엔드에 Firebase ID Token 전송
+            const response = await apiService.firebaseLogin(idToken);
+            saveTokens(response);
+            
+            console.log('✅ 백엔드 연동 성공');
+            alert('Firebase 로그인 성공!');
+            navigate('/');
+        } catch (err) {
+            console.error('❌ Firebase 로그인 오류:', err);
+            setError('Firebase 로그인에 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -96,7 +126,7 @@ const LoginPage = () => {
                         style={styles.loginButton}
                         disabled={loading}
                     >
-                        {loading ? '로그인 중...' : '로그인'}
+                        {loading ? '로그인 중...' : '일반 로그인'}
                     </button>
                 </form>
 
@@ -118,7 +148,7 @@ const LoginPage = () => {
 
                 {/* 소셜 로그인 버튼들 */}
                 <div style={styles.socialButtons}>
-                    {/* 네이버 로그인 */}
+                    {/* 네이버 로그인 (기존 유지) */}
                     <button 
                         onClick={handleNaverLogin}
                         style={styles.naverButton}
@@ -129,13 +159,14 @@ const LoginPage = () => {
                         네이버로 로그인
                     </button>
 
-                    {/* Firebase 로그인 */}
+                    {/* Firebase 로그인 (신규 추가) */}
                     <button 
                         onClick={handleFirebaseLogin}
                         style={styles.firebaseButton}
+                        disabled={loading}
                     >
                         <span style={styles.icon}>🔥</span>
-                        Firebase로 로그인 (준비중)
+                        Firebase로 로그인
                     </button>
                 </div>
             </div>

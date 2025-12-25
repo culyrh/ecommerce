@@ -1,5 +1,6 @@
 package ecommerce.domain.auth.controller;
 
+import ecommerce.domain.auth.dto.FirebaseLoginRequest;
 import ecommerce.domain.auth.dto.LoginRequest;
 import ecommerce.domain.auth.dto.RegisterRequest;
 import ecommerce.domain.auth.dto.TokenResponse;
@@ -79,11 +80,10 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "로그인 성공")
     @ApiResponse(responseCode = "401", description = "Firebase 인증 실패", content = @Content)
     public ResponseEntity<TokenResponse> firebaseLogin(
-            @Parameter(description = "Firebase ID Token")
-            @RequestParam String idToken
+            @Valid @RequestBody FirebaseLoginRequest request
     ) {
         log.info("POST /api/auth/firebase");
-        TokenResponse response = oauth2Service.firebaseLogin(idToken);
+        TokenResponse response = oauth2Service.firebaseLogin(request.getIdToken());
         return ResponseEntity.ok(response);
     }
 }

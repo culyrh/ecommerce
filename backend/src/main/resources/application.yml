@@ -61,7 +61,7 @@ jwt:
 
 # Firebase 설정
 firebase:
-  project-id: ${FIREBASE_PROJECT_ID:your-firebase-project-id}
+  project-id: ${FIREBASE_PROJECT_ID:ecommerce-80dd1}
 
 # 네이버 API 설정 (OAuth랑 같은 키 사용)
 naver:
