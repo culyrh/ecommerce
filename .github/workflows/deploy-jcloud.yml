@@ -46,14 +46,14 @@ jobs:
             
             # Docker 컨테이너 중지
             echo "Stopping existing containers..."
-            docker-compose down
+            docker compose down
             
             # Docker 이미지 빌드 및 컨테이너 시작
             echo "Building Docker images..."
-            docker-compose build backend
+            docker compose build backend
             
             echo "Starting containers..."
-            docker-compose up -d
+            docker compose up -d
             
             # 잠시 대기 (컨테이너 시작 대기)
             echo "Waiting for services to start..."
@@ -63,13 +63,13 @@ jobs:
             echo "========================================="
             echo "Container Status:"
             echo "========================================="
-            docker-compose ps
+            docker compose ps
             
             # 백엔드 로그 확인 (최근 20줄)
             echo "========================================="
             echo "Backend Logs (last 20 lines):"
             echo "========================================="
-            docker-compose logs --tail=20 backend
+            docker compose logs --tail=20 backend
             
             # Health Check
             echo "========================================="
