@@ -71,6 +71,17 @@ services:
       start_period: 60s
       retries: 3
 
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # 프론트엔드는 Client ID만 받음
+        REACT_APP_NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
 

@@ -53,19 +53,21 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/google")
+    @GetMapping("/naver")
     @Operation(
-            summary = "Google 소셜 로그인",
-            description = "Google OAuth2 Authorization Code를 사용하여 로그인"
+            summary = "Naver 소셜 로그인",
+            description = "Naver OAuth2 Authorization Code를 사용하여 로그인"
     )
     @ApiResponse(responseCode = "200", description = "로그인 성공")
-    @ApiResponse(responseCode = "401", description = "Google 인증 실패", content = @Content)
-    public ResponseEntity<TokenResponse> googleLogin(
-            @Parameter(description = "Google Authorization Code")
-            @RequestParam String code
+    @ApiResponse(responseCode = "401", description = "Naver 인증 실패", content = @Content)
+    public ResponseEntity<TokenResponse> naverLogin(
+            @Parameter(description = "Naver Authorization Code")
+            @RequestParam String code,
+            @Parameter(description = "CSRF 방지를 위한 state 파라미터")
+            @RequestParam String state
     ) {
-        log.info("GET /api/auth/google - code: {}", code);
-        TokenResponse response = oauth2Service.googleLogin(code);
+        log.info("GET /api/auth/naver - code: {}, state: {}", code, state);
+        TokenResponse response = oauth2Service.naverLogin(code, state);
         return ResponseEntity.ok(response);
     }
 

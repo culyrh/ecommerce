@@ -33,37 +33,37 @@ public class OAuth2Service {
     private final JwtTokenProvider jwtTokenProvider;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${spring.security.oauth2.client.registration.google.client-id}")
-    private String googleClientId;
+    @Value("${spring.security.oauth2.client.registration.naver.client-id}")
+    private String naverClientId;
 
-    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
-    private String googleClientSecret;
+    @Value("${spring.security.oauth2.client.registration.naver.client-secret}")
+    private String naverClientSecret;
 
     /**
-     * Google OAuth2 로그인
+     * Naver OAuth2 로그인
      */
     @Transactional
-    public TokenResponse googleLogin(String code) {
-        log.info("Google 로그인 시도: code={}", code);
+    public TokenResponse naverLogin(String code, String state) {
+        log.info("Naver 로그인 시도: code={}, state={}", code, state);
 
         try {
             // 1. Authorization Code로 Access Token 획득
-            String accessToken = getGoogleAccessToken(code);
+            String accessToken = getNaverAccessToken(code, state);
 
             // 2. Access Token으로 사용자 정보 조회
-            OAuth2UserInfo userInfo = getGoogleUserInfo(accessToken);
+            OAuth2UserInfo userInfo = getNaverUserInfo(accessToken);
 
             // 3. 사용자 등록 또는 조회
             User user = findOrCreateUser(userInfo);
 
-            log.info("Google 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
+            log.info("Naver 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
 
             // 4. JWT 토큰 발급
             return createTokenResponse(user);
 
         } catch (Exception e) {
-            log.error("Google 로그인 실패", e);
-            throw new UnauthorizedException(ErrorCode.UNAUTHORIZED, "Google 로그인에 실패했습니다");
+            log.error("Naver 로그인 실패", e);
+            throw new UnauthorizedException(ErrorCode.UNAUTHORIZED, "Naver 로그인에 실패했습니다");
         }
     }
 
@@ -108,17 +108,17 @@ public class OAuth2Service {
     }
 
     /**
-     * Google Access Token 획득
+     * Naver Access Token 획득
      */
-    private String getGoogleAccessToken(String code) {
-        String tokenUrl = "https://oauth2.googleapis.com/token";
+    private String getNaverAccessToken(String code, String state) {
+        String tokenUrl = "https://nid.naver.com/oauth2.0/token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/x-www-form-urlencoded");
 
         String body = String.format(
-                "code=%s&client_id=%s&client_secret=%s&redirect_uri=%s&grant_type=authorization_code",
-                code, googleClientId, googleClientSecret, "http://localhost:8080/api/auth/google/callback"
+                "grant_type=authorization_code&client_id=%s&client_secret=%s&code=%s&state=%s",
+                naverClientId, naverClientSecret, code, state
         );
 
         HttpEntity<String> request = new HttpEntity<>(body, headers);
@@ -128,10 +128,10 @@ public class OAuth2Service {
     }
 
     /**
-     * Google 사용자 정보 조회
+     * Naver 사용자 정보 조회
      */
-    private OAuth2UserInfo getGoogleUserInfo(String accessToken) {
-        String userInfoUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
+    private OAuth2UserInfo getNaverUserInfo(String accessToken) {
+        String userInfoUrl = "https://openapi.naver.com/v1/nid/me";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -144,13 +144,15 @@ public class OAuth2Service {
                 Map.class
         );
 
-        Map<String, Object> userInfo = response.getBody();
+        Map<String, Object> body = response.getBody();
+        Map<String, Object> responseData = (Map<String, Object>) body.get("response");
 
+        // Naver API 응답 구조: { "response": { "id": "...", "email": "...", "name": "..." } }
         return OAuth2UserInfo.builder()
-                .email((String) userInfo.get("email"))
-                .name((String) userInfo.get("name"))
-                .provider("GOOGLE")
-                .providerId((String) userInfo.get("id"))
+                .email((String) responseData.get("email"))
+                .name((String) responseData.get("name"))
+                .provider("NAVER")
+                .providerId((String) responseData.get("id"))
                 .build();
     }
 

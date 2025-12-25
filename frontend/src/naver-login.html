@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naver 로그인</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        #naver-login-btn {
+            background-color: #03c75a;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        #naver-login-btn:hover {
+            background-color: #02b350;
+        }
+        
+        #naver-login-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>이커머스 플랫폼</h1>
+        <button id="naver-login-btn" onclick="naverLogin()">
+            <svg viewBox="0 0 20 20">
+                <path d="M13.2 10L7.8 0H0v20h6.8V10L12.2 20H20V0h-6.8z"/>
+            </svg>
+            네이버로 로그인
+        </button>
+    </div>
+
+    <script>
+        // 환경 설정 (실제 값으로 변경 필요)
+        const NAVER_CLIENT_ID = 'YOUR_NAVER_OAUTH_CLIENT_ID'; // .env의 NAVER_OAUTH_CLIENT_ID 값
+        const REDIRECT_URI = 'http://localhost:8080/login/oauth2/code/naver';
+        const BACKEND_API_URL = 'http://localhost:8080/api/auth/naver';
+
+        // 랜덤 state 생성 함수
+        function generateState() {
+            return Math.random().toString(36).substring(2, 15);
+        }
+
+        // 네이버 로그인 버튼 클릭
+        function naverLogin() {
+            const state = generateState();
+            
+            // state를 localStorage에 저장 (CSRF 검증용)
+            localStorage.setItem('naver_oauth_state', state);
+            
+            // 네이버 로그인 페이지로 리다이렉트
+            const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?` +
+                `response_type=code` +
+                `&client_id=${NAVER_CLIENT_ID}` +
+                `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+                `&state=${state}`;
+            
+            window.location.href = naverAuthUrl;
+        }
+
+        // 페이지 로드 시 callback 처리
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+
+            // 에러 처리
+            if (error) {
+                alert('네이버 로그인에 실패했습니다: ' + error);
+                return;
+            }
+
+            // 콜백 처리
+            if (code && state) {
+                // state 검증
+                const savedState = localStorage.getItem('naver_oauth_state');
+                if (state !== savedState) {
+                    alert('잘못된 요청입니다. (state 불일치)');
+                    return;
+                }
+
+                // 백엔드 API 호출
+                fetch(`${BACKEND_API_URL}?code=${code}&state=${state}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('로그인 실패');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // JWT 토큰 저장
+                        localStorage.setItem('accessToken', data.accessToken);
+                        localStorage.setItem('refreshToken', data.refreshToken);
+                        
+                        // state 제거
+                        localStorage.removeItem('naver_oauth_state');
+                        
+                        alert('로그인 성공!');
+                        
+                        // 메인 페이지로 이동
+                        window.location.href = '/';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('로그인 처리 중 오류가 발생했습니다.');
+                    });
+            }
+        };
+    </script>
+</body>
+</html>
