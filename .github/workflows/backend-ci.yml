@@ -55,6 +55,12 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      # GitHub Secret에서 Firebase 설정 파일 생성
+      - name: Create Firebase config from secret
+        run: |
+          mkdir -p src/main/resources
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > src/main/resources/firebase-service-account.json
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -68,6 +74,7 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: test-secret-key-minimum-256-bits-long-for-hs256-algorithm-testing
+          FIREBASE_PROJECT_ID: ecommerce-80dd1
         run: ./gradlew build --no-daemon
 
       - name: Run tests
@@ -80,6 +87,7 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: test-secret-key-minimum-256-bits-long-for-hs256-algorithm-testing
+          FIREBASE_PROJECT_ID: ecommerce-80dd1
         run: ./gradlew test --no-daemon
 
       - name: Upload test results

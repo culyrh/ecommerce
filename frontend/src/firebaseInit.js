@@ -1,14 +1,14 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
+// Firebase configuration - 환경변수 사용
 const firebaseConfig = {
-  apiKey: "REMOVED_GOOGLE_API_KEY",
-  authDomain: "ecommerce-80dd1.firebaseapp.com",
-  projectId: "ecommerce-80dd1",
-  storageBucket: "ecommerce-80dd1.firebasestorage.app",
-  messagingSenderId: "294677844224",
-  appId: "1:294677844224:web:7c2fc575be870da44523e5"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
 // Firebase 초기화
