@@ -75,8 +75,9 @@ services:
     build:
       context: ./frontend
       args:
-        # 프론트엔드는 Client ID만 받음
         REACT_APP_NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+    environment:
+      - REACT_APP_BACKEND_URL=http://113.198.66.68:10230
     ports:
       - "3000:3000"
     depends_on:
