@@ -46,7 +46,8 @@ logs/
 *.log
 
 ### Firebase ###
-firebase-credentials.json
+firebase-service-account.json
+**/firebase-service-account.json
 
 ### Sensitive Files ###
 *.pem
