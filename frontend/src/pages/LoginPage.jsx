@@ -68,7 +68,7 @@ const LoginPage = () => {
     return (
         <div style={styles.container}>
             <div style={styles.loginBox}>
-                <h1 style={styles.title}>🛒 이커머스 로그인</h1>
+                <h1 style={styles.title}>이커머스 로그인</h1>
                 
                 {/* 일반 로그인 폼 */}
                 <form onSubmit={handleEmailLogin} style={styles.form}>
