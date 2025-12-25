@@ -50,7 +50,7 @@ jobs:
             
             # Docker 이미지 빌드 및 컨테이너 시작
             echo "Building Docker images..."
-            docker-compose build --no-cache backend
+            docker-compose build backend
             
             echo "Starting containers..."
             docker-compose up -d

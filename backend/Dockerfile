@@ -16,7 +16,8 @@ RUN chmod +x gradlew
 COPY src src
 
 # Build application
-RUN gradle clean bootJar --no-daemon
+# RUN gradle clean bootJar --no-daemon
+RUN ./gradlew clean bootJar -x test --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:17-jre
