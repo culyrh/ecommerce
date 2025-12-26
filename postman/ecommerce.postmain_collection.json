@@ -1,0 +1,574 @@
+{
+  "info": {
+    "_postman_id": "ecommerce-termproject-2025",
+    "name": "E-Commerce Platform API",
+    "description": "입점 중개형 전자상거래 플랫폼 - 47개 API 엔드포인트\n\n**Base URL**: http://113.198.66.68:10254\n**Swagger**: http://113.198.66.68:10254/swagger-ui/index.html\n\n**테스트 계정**:\n- USER: user@example.com / password123\n- SELLER: seller@example.com / password123\n- ADMIN: admin@example.com / password123",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]
+  },
+  "item": [
+    {
+      "name": "1. Auth (4)",
+      "item": [
+        {
+          "name": "Register",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 201', () => pm.response.to.have.status(201));", "pm.test('Has token', () => {", "const json = pm.response.json();", "pm.expect(json).to.have.property('accessToken');", "pm.environment.set('ACCESS_TOKEN', json.accessToken);", "});"]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"홍길동\",\n  \"phone\": \"010-1234-5678\",\n  \"birthDate\": \"1990-01-01\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/auth/register", "host": ["{{BASE_URL}}"], "path": ["api", "auth", "register"]}
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Login OK', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "pm.environment.set('ACCESS_TOKEN', json.accessToken);"]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/auth/login", "host": ["{{BASE_URL}}"], "path": ["api", "auth", "login"]}
+          }
+        },
+        {
+          "name": "Google OAuth",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/auth/google?code=AUTH_CODE", "host": ["{{BASE_URL}}"], "path": ["api", "auth", "google"], "query": [{"key": "code", "value": "AUTH_CODE"}]}
+          }
+        },
+        {
+          "name": "Firebase Auth",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/auth/firebase?idToken=FIREBASE_TOKEN", "host": ["{{BASE_URL}}"], "path": ["api", "auth", "firebase"], "query": [{"key": "idToken", "value": "FIREBASE_TOKEN"}]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users (4)",
+      "item": [
+        {
+          "name": "Get My Info",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Has user data', () => {", "const json = pm.response.json();", "pm.expect(json).to.have.property('email');", "});"]}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/users/me", "host": ["{{BASE_URL}}"], "path": ["api", "users", "me"]}
+          }
+        },
+        {
+          "name": "Update My Info",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"김철수\",\n  \"phone\": \"010-9999-8888\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/users/me", "host": ["{{BASE_URL}}"], "path": ["api", "users", "me"]}
+          }
+        },
+        {
+          "name": "Delete My Account",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/users/me", "host": ["{{BASE_URL}}"], "path": ["api", "users", "me"]}
+          }
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/users?page=0&size=20", "host": ["{{BASE_URL}}"], "path": ["api", "users"], "query": [{"key": "page", "value": "0"}, {"key": "size", "value": "20"}]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Sellers (5)",
+      "item": [
+        {
+          "name": "Register as Seller",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"businessNumber\": \"123-45-67890\",\n  \"businessName\": \"홍길동 상점\",\n  \"ceoName\": \"홍길동\",\n  \"address\": \"서울시 강남구\",\n  \"phoneNumber\": \"02-1234-5678\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/sellers", "host": ["{{BASE_URL}}"], "path": ["api", "sellers"]}
+          }
+        },
+        {
+          "name": "Get My Seller Info",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/sellers/me", "host": ["{{BASE_URL}}"], "path": ["api", "sellers", "me"]}
+          }
+        },
+        {
+          "name": "Update My Seller Info",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"businessName\": \"새로운 상점명\",\n  \"phoneNumber\": \"02-9999-8888\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/sellers/me", "host": ["{{BASE_URL}}"], "path": ["api", "sellers", "me"]}
+          }
+        },
+        {
+          "name": "Delete Seller Account",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/sellers/me", "host": ["{{BASE_URL}}"], "path": ["api", "sellers", "me"]}
+          }
+        },
+        {
+          "name": "Get Dashboard",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Response time < 500ms', () => pm.expect(pm.response.responseTime).to.be.below(500));"]}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/sellers/me/dashboard", "host": ["{{BASE_URL}}"], "path": ["api", "sellers", "me", "dashboard"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Categories (4)",
+      "item": [
+        {
+          "name": "Create Category",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"전자제품\",\n  \"parentId\": null\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/categories", "host": ["{{BASE_URL}}"], "path": ["api", "categories"]}
+          }
+        },
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/categories", "host": ["{{BASE_URL}}"], "path": ["api", "categories"]}
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"수정된 카테고리명\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/categories/1", "host": ["{{BASE_URL}}"], "path": ["api", "categories", "1"]}
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/categories/1", "host": ["{{BASE_URL}}"], "path": ["api", "categories", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Products (8)",
+      "item": [
+        {
+          "name": "Create Product",
+          "event": [{"listen": "test", "script": {"exec": ["const json = pm.response.json();", "if (json.id) pm.environment.set('PRODUCT_ID', json.id);"]}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"노트북\",\n  \"description\": \"고성능 노트북\",\n  \"price\": 1500000,\n  \"stock\": 100,\n  \"categoryId\": 1\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/products", "host": ["{{BASE_URL}}"], "path": ["api", "products"]}
+          }
+        },
+        {
+          "name": "Get Products (Search)",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Pagination structure', () => {", "const json = pm.response.json();", "pm.expect(json).to.have.property('content');", "pm.expect(json).to.have.property('totalElements');", "});"]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/products?keyword=노트북&page=0&size=12&sort=price,ASC", "host": ["{{BASE_URL}}"], "path": ["api", "products"], "query": [{"key": "keyword", "value": "노트북"}, {"key": "page", "value": "0"}, {"key": "size", "value": "12"}, {"key": "sort", "value": "price,ASC"}]}
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/products/{{PRODUCT_ID}}", "host": ["{{BASE_URL}}"], "path": ["api", "products", "{{PRODUCT_ID}}"]}
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"수정된 상품명\",\n  \"price\": 1300000\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/products/{{PRODUCT_ID}}", "host": ["{{BASE_URL}}"], "path": ["api", "products", "{{PRODUCT_ID}}"]}
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/products/{{PRODUCT_ID}}", "host": ["{{BASE_URL}}"], "path": ["api", "products", "{{PRODUCT_ID}}"]}
+          }
+        },
+        {
+          "name": "Naver Shopping Search",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/products/naver/search?query=노트북", "host": ["{{BASE_URL}}"], "path": ["api", "products", "naver", "search"], "query": [{"key": "query", "value": "노트북"}]}
+          }
+        },
+        {
+          "name": "Update Stock",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"stock\": 50\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/products/{{PRODUCT_ID}}/stock", "host": ["{{BASE_URL}}"], "path": ["api", "products", "{{PRODUCT_ID}}", "stock"]}
+          }
+        },
+        {
+          "name": "Get Product Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/products/{{PRODUCT_ID}}/reviews?page=0&size=20", "host": ["{{BASE_URL}}"], "path": ["api", "products", "{{PRODUCT_ID}}", "reviews"], "query": [{"key": "page", "value": "0"}, {"key": "size", "value": "20"}]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Orders (5)",
+      "item": [
+        {
+          "name": "Create Order",
+          "event": [{"listen": "test", "script": {"exec": ["const json = pm.response.json();", "if (json.id) pm.environment.set('ORDER_ID', json.id);"]}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"quantity\": 2\n    }\n  ],\n  \"address\": \"서울시 강남구\",\n  \"couponId\": null\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/orders", "host": ["{{BASE_URL}}"], "path": ["api", "orders"]}
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/orders?page=0&size=10", "host": ["{{BASE_URL}}"], "path": ["api", "orders"], "query": [{"key": "page", "value": "0"}, {"key": "size", "value": "10"}]}
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/orders/{{ORDER_ID}}", "host": ["{{BASE_URL}}"], "path": ["api", "orders", "{{ORDER_ID}}"]}
+          }
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"address\": \"서울시 서초구\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/orders/{{ORDER_ID}}", "host": ["{{BASE_URL}}"], "path": ["api", "orders", "{{ORDER_ID}}"]}
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/orders/{{ORDER_ID}}", "host": ["{{BASE_URL}}"], "path": ["api", "orders", "{{ORDER_ID}}"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Reviews (4)",
+      "item": [
+        {
+          "name": "Create Review",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"productId\": 1,\n  \"rating\": 5,\n  \"content\": \"정말 좋은 상품입니다!\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/reviews", "host": ["{{BASE_URL}}"], "path": ["api", "reviews"]}
+          }
+        },
+        {
+          "name": "Get My Reviews",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/reviews/my?page=0&size=20", "host": ["{{BASE_URL}}"], "path": ["api", "reviews", "my"], "query": [{"key": "page", "value": "0"}, {"key": "size", "value": "20"}]}
+          }
+        },
+        {
+          "name": "Update Review",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"rating\": 4,\n  \"content\": \"수정된 리뷰\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/reviews/1", "host": ["{{BASE_URL}}"], "path": ["api", "reviews", "1"]}
+          }
+        },
+        {
+          "name": "Delete Review",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/reviews/1", "host": ["{{BASE_URL}}"], "path": ["api", "reviews", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Restock Votes (4)",
+      "item": [
+        {
+          "name": "Vote for Restock",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"productId\": 1\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/restock-votes", "host": ["{{BASE_URL}}"], "path": ["api", "restock-votes"]}
+          }
+        },
+        {
+          "name": "Get My Votes",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/restock-votes/my", "host": ["{{BASE_URL}}"], "path": ["api", "restock-votes", "my"]}
+          }
+        },
+        {
+          "name": "Get Product Votes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/products/1/restock-votes", "host": ["{{BASE_URL}}"], "path": ["api", "products", "1", "restock-votes"]}
+          }
+        },
+        {
+          "name": "Cancel Vote",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/restock-votes/1", "host": ["{{BASE_URL}}"], "path": ["api", "restock-votes", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Restock Notifications (4)",
+      "item": [
+        {
+          "name": "Subscribe Restock",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"productId\": 1\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/restock-notifications", "host": ["{{BASE_URL}}"], "path": ["api", "restock-notifications"]}
+          }
+        },
+        {
+          "name": "Get My Subscriptions",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/restock-notifications/my", "host": ["{{BASE_URL}}"], "path": ["api", "restock-notifications", "my"]}
+          }
+        },
+        {
+          "name": "Get Product Subscriptions",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/products/1/restock-notifications", "host": ["{{BASE_URL}}"], "path": ["api", "products", "1", "restock-notifications"]}
+          }
+        },
+        {
+          "name": "Unsubscribe Restock",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/restock-notifications/1", "host": ["{{BASE_URL}}"], "path": ["api", "restock-notifications", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Coupons (4)",
+      "item": [
+        {
+          "name": "Create Coupon",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"신규가입 쿠폰\",\n  \"type\": \"WELCOME\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 10,\n  \"minOrderAmount\": 10000\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/coupons", "host": ["{{BASE_URL}}"], "path": ["api", "coupons"]}
+          }
+        },
+        {
+          "name": "Get Coupons",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/coupons", "host": ["{{BASE_URL}}"], "path": ["api", "coupons"]}
+          }
+        },
+        {
+          "name": "Update Coupon",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"수정된 쿠폰명\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/coupons/1", "host": ["{{BASE_URL}}"], "path": ["api", "coupons", "1"]}
+          }
+        },
+        {
+          "name": "Delete Coupon",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/coupons/1", "host": ["{{BASE_URL}}"], "path": ["api", "coupons", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. User Coupons (2)",
+      "item": [
+        {
+          "name": "Get My Coupons",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/user-coupons/my?availableOnly=true", "host": ["{{BASE_URL}}"], "path": ["api", "user-coupons", "my"], "query": [{"key": "availableOnly", "value": "true"}]}
+          }
+        },
+        {
+          "name": "Use Coupon",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/user-coupons/1/use", "host": ["{{BASE_URL}}"], "path": ["api", "user-coupons", "1", "use"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Notifications (4)",
+      "item": [
+        {
+          "name": "Create Notification",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"type\": \"ORDER\",\n  \"title\": \"주문 완료\",\n  \"content\": \"주문이 완료되었습니다\"\n}"},
+            "url": {"raw": "{{BASE_URL}}/api/notifications", "host": ["{{BASE_URL}}"], "path": ["api", "notifications"]}
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/notifications?page=0&size=20", "host": ["{{BASE_URL}}"], "path": ["api", "notifications"], "query": [{"key": "page", "value": "0"}, {"key": "size", "value": "20"}]}
+          }
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "PUT",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/notifications/1", "host": ["{{BASE_URL}}"], "path": ["api", "notifications", "1"]}
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}"}]},
+            "method": "DELETE",
+            "header": [],
+            "url": {"raw": "{{BASE_URL}}/api/notifications/1", "host": ["{{BASE_URL}}"], "path": ["api", "notifications", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "13. Health Check",
+      "event": [{"listen": "test", "script": {"exec": ["pm.test('Health OK', () => {", "pm.response.to.have.status(200);", "const json = pm.response.json();", "pm.expect(json.status).to.eql('UP');", "});"]}}],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {"raw": "{{BASE_URL}}/health", "host": ["{{BASE_URL}}"], "path": ["health"]}
+      }
+    }
+  ],
+  "variable": [
+    {"key": "BASE_URL", "value": "http://113.198.66.68:10254", "type": "string"},
+    {"key": "ACCESS_TOKEN", "value": "", "type": "string"},
+    {"key": "PRODUCT_ID", "value": "", "type": "string"},
+    {"key": "ORDER_ID", "value": "", "type": "string"}
+  ]
+}
