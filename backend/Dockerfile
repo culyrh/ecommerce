@@ -7,7 +7,9 @@ COPY build.gradle settings.gradle gradlew ./
 COPY gradle gradle
 
 # Download dependencies
-RUN ./gradlew dependencies --no-daemon || return 0
+# gradle 명령어 직접 사용 (gradlew의 네트워크 다운로드 회피)
+RUN gradle dependencies --no-daemon || return 0
+# RUN ./gradlew dependencies --no-daemon || return 0
 
 # add gradlew authority
 RUN chmod +x gradlew
@@ -15,9 +17,9 @@ RUN chmod +x gradlew
 # Copy source code
 COPY src src
 
-# Build application
+# Build application - gradle 명령어 사용
+RUN gradle clean bootJar -x test --no-daemon
 # RUN gradle clean bootJar --no-daemon
-RUN ./gradlew clean bootJar -x test --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:17-jre
