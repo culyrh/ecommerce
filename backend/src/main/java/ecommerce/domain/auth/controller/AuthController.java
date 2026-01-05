@@ -1,6 +1,5 @@
 package ecommerce.domain.auth.controller;
 
-import ecommerce.domain.auth.dto.FirebaseLoginRequest;
 import ecommerce.domain.auth.dto.LoginRequest;
 import ecommerce.domain.auth.dto.RegisterRequest;
 import ecommerce.domain.auth.dto.TokenResponse;
@@ -69,21 +68,6 @@ public class AuthController {
     ) {
         log.info("GET /api/auth/naver - code: {}, state: {}", code, state);
         TokenResponse response = oauth2Service.naverLogin(code, state);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/firebase")
-    @Operation(
-            summary = "Firebase 소셜 로그인",
-            description = "Firebase ID Token을 사용하여 로그인"
-    )
-    @ApiResponse(responseCode = "200", description = "로그인 성공")
-    @ApiResponse(responseCode = "401", description = "Firebase 인증 실패", content = @Content)
-    public ResponseEntity<TokenResponse> firebaseLogin(
-            @Valid @RequestBody FirebaseLoginRequest request
-    ) {
-        log.info("POST /api/auth/firebase");
-        TokenResponse response = oauth2Service.firebaseLogin(request.getIdToken());
         return ResponseEntity.ok(response);
     }
 }
