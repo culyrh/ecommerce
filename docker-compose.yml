@@ -54,5 +54,19 @@ services:
       retries: 3
       start_period: 40s
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_BACKEND_URL=http://3.27.248.26:8080
+      - REACT_APP_NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
 volumes:
   redis_data:
