@@ -1,8 +1,5 @@
 package ecommerce.domain.auth.provider;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import ecommerce.common.enums.Role;
 import ecommerce.common.exception.ErrorCode;
 import ecommerce.common.exception.UnauthorizedException;
@@ -64,46 +61,6 @@ public class OAuth2Service {
         } catch (Exception e) {
             log.error("Naver 로그인 실패", e);
             throw new UnauthorizedException(ErrorCode.UNAUTHORIZED, "Naver 로그인에 실패했습니다");
-        }
-    }
-
-    /**
-     * Firebase Auth 로그인
-     */
-    @Transactional
-    public TokenResponse firebaseLogin(String idToken) {
-        log.info("Firebase 로그인 시도");
-
-        try {
-            // 1. Firebase ID Token 검증
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-
-            // 2. 사용자 정보 추출
-            String email = decodedToken.getEmail();
-            String name = decodedToken.getName();
-            String uid = decodedToken.getUid();
-
-            OAuth2UserInfo userInfo = OAuth2UserInfo.builder()
-                    .email(email)
-                    .name(name != null ? name : email.split("@")[0])
-                    .provider("FIREBASE")
-                    .providerId(uid)
-                    .build();
-
-            // 3. 사용자 등록 또는 조회
-            User user = findOrCreateUser(userInfo);
-
-            log.info("Firebase 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
-
-            // 4. JWT 토큰 발급
-            return createTokenResponse(user);
-
-        } catch (FirebaseAuthException e) {
-            log.error("Firebase 토큰 검증 실패", e);
-            throw new UnauthorizedException(ErrorCode.INVALID_TOKEN, "Firebase 토큰이 유효하지 않습니다");
-        } catch (Exception e) {
-            log.error("Firebase 로그인 실패", e);
-            throw new UnauthorizedException(ErrorCode.UNAUTHORIZED, "Firebase 로그인에 실패했습니다");
         }
     }
 

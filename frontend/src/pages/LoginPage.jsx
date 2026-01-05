@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import firebaseAuth from '../firebaseInit';
 import apiService from '../services/api';
 import { saveTokens } from '../utils/auth';
 
@@ -15,7 +13,7 @@ const LoginPage = () => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
     const NAVER_CLIENT_ID = process.env.REACT_APP_NAVER_CLIENT_ID;
 
-    // 일반 로그인 (수정 필요한 부분)
+    // 일반 로그인
     const handleEmailLogin = async (e) => {
         e.preventDefault();
         setError('');
@@ -61,38 +59,6 @@ const LoginPage = () => {
             `&state=${state}`;
         
         window.location.href = naverAuthUrl;
-    };
-
-    // Firebase 로그인 (신규 추가)
-    const handleFirebaseLogin = async () => {
-        if (!email || !password) {
-            setError('이메일과 비밀번호를 입력해주세요.');
-            return;
-        }
-
-        setError('');
-        setLoading(true);
-
-        try {
-            // 1. Firebase로 로그인
-            const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
-            const idToken = await userCredential.user.getIdToken();
-            
-            console.log('✅ Firebase 로그인 성공');
-
-            // 2. 백엔드에 Firebase ID Token 전송
-            const response = await apiService.firebaseLogin(idToken);
-            saveTokens(response);
-            
-            console.log('✅ 백엔드 연동 성공');
-            alert('Firebase 로그인 성공!');
-            navigate('/');
-        } catch (err) {
-            console.error('❌ Firebase 로그인 오류:', err);
-            setError('Firebase 로그인에 실패했습니다.');
-        } finally {
-            setLoading(false);
-        }
     };
 
     return (
@@ -157,16 +123,6 @@ const LoginPage = () => {
                             <path d="M13.2 10L7.8 0H0v20h6.8V10L12.2 20H20V0h-6.8z" fill="white"/>
                         </svg>
                         네이버로 로그인
-                    </button>
-
-                    {/* Firebase 로그인 (신규 추가) */}
-                    <button 
-                        onClick={handleFirebaseLogin}
-                        style={styles.firebaseButton}
-                        disabled={loading}
-                    >
-                        <span style={styles.icon}>🔥</span>
-                        Firebase로 로그인
                     </button>
                 </div>
             </div>
@@ -262,20 +218,6 @@ const styles = {
         fontSize: '16px',
         fontWeight: 'bold',
         backgroundColor: '#03c75a',
-        color: 'white',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '10px',
-    },
-    firebaseButton: {
-        padding: '12px',
-        fontSize: '16px',
-        fontWeight: 'bold',
-        backgroundColor: '#FFA000',
         color: 'white',
         border: 'none',
         borderRadius: '6px',
