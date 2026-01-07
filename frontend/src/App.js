@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
 import apiService from './services/api';
 
-// 페이지 import
+// 모든 페이지 import
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OAuthCallback from './pages/OAuthCallback';
@@ -10,10 +10,10 @@ import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import BecomeSellerPage from './pages/BecomeSellerPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
+import SellerProductListPage from './pages/SellerProductListPage';
 import OrderCreatePage from './pages/OrderCreatePage';
 import OrderListPage from './pages/OrderListPage';
 import OrderDetailPage from './pages/OrderDetailPage';
-import SellerProductListPage from './pages/SellerProductListPage';
 
 // 레이아웃 컴포넌트
 function Layout({ children }) {
@@ -49,7 +49,6 @@ function Layout({ children }) {
 
   return (
     <div style={styles.layout}>
-      {/* 네비게이션 바 */}
       <nav style={styles.navbar}>
         <div style={styles.navContainer}>
           <Link to="/" style={styles.logo}>
@@ -63,7 +62,6 @@ function Layout({ children }) {
 
             {accessToken && user ? (
               <>
-                {/* USER 역할 */}
                 {user.role === 'ROLE_USER' && (
                   <>
                     <Link to="/orders" style={styles.navLink}>
@@ -75,7 +73,6 @@ function Layout({ children }) {
                   </>
                 )}
 
-                {/* SELLER 역할 */}
                 {(user.role === 'ROLE_SELLER' || user.role === 'ROLE_ADMIN') && (
                   <>
                     <Link to="/seller/dashboard" style={styles.navLink}>
@@ -87,25 +84,6 @@ function Layout({ children }) {
                   </>
                 )}
 
-                {/* ADMIN 역할 추가 메뉴 */}
-                {user.role === 'ROLE_ADMIN' && (
-                  <>
-                    <Link to="/admin/users" style={styles.navLink}>
-                      회원 관리
-                    </Link>
-                    <Link to="/admin/categories" style={styles.navLink}>
-                      카테고리
-                    </Link>
-                  </>
-                )}
-
-                {/* 공통 */}
-                <Link to="/notifications" style={styles.navLink}>
-                  알림
-                </Link>
-                <Link to="/coupons" style={styles.navLink}>
-                  쿠폰
-                </Link>
                 <Link to="/mypage" style={styles.navLink}>
                   마이페이지
                 </Link>
@@ -131,12 +109,10 @@ function Layout({ children }) {
         </div>
       </nav>
 
-      {/* 메인 컨텐츠 */}
       <main style={styles.main}>
         {children}
       </main>
 
-      {/* 푸터 */}
       <footer style={styles.footer}>
         <div style={styles.footerContent}>
           <p>© 2026 이커머스 플랫폼. All rights reserved.</p>
@@ -245,7 +221,7 @@ function ProtectedRoute({ children, requiredRole }) {
   return children;
 }
 
-// 간단한 페이지들
+// 마이페이지
 function MyPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -289,26 +265,6 @@ function MyPage() {
           </span>
         </div>
       </div>
-    </div>
-  );
-}
-
-// 알림 페이지 (간단 버전)
-function NotificationPage() {
-  return (
-    <div style={styles.container}>
-      <h1>알림</h1>
-      <p>알림 기능은 구현 예정입니다.</p>
-    </div>
-  );
-}
-
-// 쿠폰 페이지 (간단 버전)
-function CouponPage() {
-  return (
-    <div style={styles.container}>
-      <h1>내 쿠폰</h1>
-      <p>쿠폰 기능은 구현 예정입니다.</p>
     </div>
   );
 }
@@ -373,34 +329,6 @@ function App() {
               <Route path="/mypage" element={
                 <ProtectedRoute>
                   <MyPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/notifications" element={
-                <ProtectedRoute>
-                  <NotificationPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/coupons" element={
-                <ProtectedRoute>
-                  <CouponPage />
-                </ProtectedRoute>
-              } />
-
-              {/* 관리자 기능 (ADMIN만) */}
-              <Route path="/admin/users" element={
-                <ProtectedRoute requiredRole="ROLE_ADMIN">
-                  <div style={styles.container}>
-                    <h1>회원 관리</h1>
-                    <p>관리자 전용 회원 관리 페이지 (구현 예정)</p>
-                  </div>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/categories" element={
-                <ProtectedRoute requiredRole="ROLE_ADMIN">
-                  <div style={styles.container}>
-                    <h1>카테고리 관리</h1>
-                    <p>관리자 전용 카테고리 관리 페이지 (구현 예정)</p>
-                  </div>
                 </ProtectedRoute>
               } />
             </Routes>
