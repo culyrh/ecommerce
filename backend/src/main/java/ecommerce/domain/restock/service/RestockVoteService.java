@@ -1,5 +1,6 @@
 package ecommerce.domain.restock.service;
 
+import ecommerce.common.enums.Role;
 import ecommerce.common.exception.BadRequestException;
 import ecommerce.common.exception.ErrorCode;
 import ecommerce.common.exception.ResourceNotFoundException;
@@ -121,7 +122,8 @@ public class RestockVoteService {
         // 관리자용 더미 사용자 조회 또는 생성 (admin@system.com)
         // 또는 user를 null로 허용하도록 Notification 엔티티 수정 필요
         // 현재는 임시로 첫 번째 관리자 사용자를 조회
-        User adminUser = userRepository.findById(1L).orElse(null);
+        User adminUser = userRepository.findFirstByRole(Role.ROLE_ADMIN)
+                .orElse(null);
 
         if (adminUser == null) {
             log.warn("관리자 사용자를 찾을 수 없습니다. 알림 생성 건너뜀");
