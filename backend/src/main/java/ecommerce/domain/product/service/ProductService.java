@@ -1,5 +1,6 @@
 package ecommerce.domain.product.service;
 
+import ecommerce.common.enums.Role;
 import ecommerce.common.exception.ErrorCode;
 import ecommerce.common.exception.ForbiddenException;
 import ecommerce.common.exception.ResourceNotFoundException;
@@ -139,8 +140,10 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND));
 
         // 본인 상품인지 확인
-        if (!product.getSeller().getId().equals(seller.getId())) {
-            throw new ForbiddenException(ErrorCode.ACCESS_DENIED, "본인의 상품만 수정할 수 있습니다");
+        if (user.getRole() != Role.ROLE_ADMIN) {
+            if (!product.getSeller().getId().equals(seller.getId())) {
+                throw new ForbiddenException(ErrorCode.ACCESS_DENIED, "본인의 상품만 수정할 수 있습니다");
+            }
         }
 
         // 변경 사항 적용
