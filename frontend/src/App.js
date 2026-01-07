@@ -10,6 +10,10 @@ import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import BecomeSellerPage from './pages/BecomeSellerPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
+import OrderCreatePage from './pages/OrderCreatePage';
+import OrderListPage from './pages/OrderListPage';
+import OrderDetailPage from './pages/OrderDetailPage';
+import SellerProductListPage from './pages/SellerProductListPage';
 
 // 레이아웃 컴포넌트
 function Layout({ children }) {
@@ -83,9 +87,24 @@ function Layout({ children }) {
                   </>
                 )}
 
+                {/* ADMIN 역할 추가 메뉴 */}
+                {user.role === 'ROLE_ADMIN' && (
+                  <>
+                    <Link to="/admin/users" style={styles.navLink}>
+                      회원 관리
+                    </Link>
+                    <Link to="/admin/categories" style={styles.navLink}>
+                      카테고리
+                    </Link>
+                  </>
+                )}
+
                 {/* 공통 */}
                 <Link to="/notifications" style={styles.navLink}>
                   알림
+                </Link>
+                <Link to="/coupons" style={styles.navLink}>
+                  쿠폰
                 </Link>
                 <Link to="/mypage" style={styles.navLink}>
                   마이페이지
@@ -181,7 +200,7 @@ function HomePage() {
   );
 }
 
-// Protected Route (로그인 필요)
+// Protected Route
 function ProtectedRoute({ children, requiredRole }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -201,13 +220,8 @@ function ProtectedRoute({ children, requiredRole }) {
       const userData = await apiService.getCurrentUser();
       setUser(userData);
 
-      // 역할 체크
-      if (requiredRole && userData.role !== requiredRole) {
-        // ADMIN은 모든 역할 접근 가능
-        if (userData.role !== 'ROLE_ADMIN') {
-          alert('접근 권한이 없습니다.');
-          return;
-        }
+      if (requiredRole && userData.role !== requiredRole && userData.role !== 'ROLE_ADMIN') {
+        alert('접근 권한이 없습니다.');
       }
     } catch (err) {
       console.error('인증 실패:', err);
@@ -224,7 +238,6 @@ function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" />;
   }
 
-  // 역할 체크
   if (requiredRole && user.role !== requiredRole && user.role !== 'ROLE_ADMIN') {
     return <Navigate to="/" />;
   }
@@ -232,7 +245,7 @@ function ProtectedRoute({ children, requiredRole }) {
   return children;
 }
 
-// 마이페이지 (간단한 버전)
+// 간단한 페이지들
 function MyPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -252,13 +265,8 @@ function MyPage() {
     }
   };
 
-  if (loading) {
-    return <div style={styles.loading}>로딩 중...</div>;
-  }
-
-  if (!user) {
-    return <div>사용자 정보를 불러올 수 없습니다.</div>;
-  }
+  if (loading) return <div style={styles.loading}>로딩 중...</div>;
+  if (!user) return <div>사용자 정보를 불러올 수 없습니다.</div>;
 
   return (
     <div style={styles.container}>
@@ -280,13 +288,27 @@ function MyPage() {
             {user.role === 'ROLE_ADMIN' && '관리자'}
           </span>
         </div>
-        {user.phone && (
-          <div style={styles.infoRow}>
-            <span style={styles.infoLabel}>전화번호:</span>
-            <span style={styles.infoValue}>{user.phone}</span>
-          </div>
-        )}
       </div>
+    </div>
+  );
+}
+
+// 알림 페이지 (간단 버전)
+function NotificationPage() {
+  return (
+    <div style={styles.container}>
+      <h1>알림</h1>
+      <p>알림 기능은 구현 예정입니다.</p>
+    </div>
+  );
+}
+
+// 쿠폰 페이지 (간단 버전)
+function CouponPage() {
+  return (
+    <div style={styles.container}>
+      <h1>내 쿠폰</h1>
+      <p>쿠폰 기능은 구현 예정입니다.</p>
     </div>
   );
 }
@@ -306,8 +328,27 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<HomePage />} />
+              
+              {/* 상품 관련 */}
               <Route path="/products" element={<ProductListPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />
+
+              {/* 주문 관련 (로그인 필요) */}
+              <Route path="/orders/create" element={
+                <ProtectedRoute>
+                  <OrderCreatePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/orders" element={
+                <ProtectedRoute>
+                  <OrderListPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/orders/:id" element={
+                <ProtectedRoute>
+                  <OrderDetailPage />
+                </ProtectedRoute>
+              } />
 
               {/* 판매자 등록 (USER만) */}
               <Route path="/seller/register" element={
@@ -316,44 +357,49 @@ function App() {
                 </ProtectedRoute>
               } />
 
-              {/* 판매자 대시보드 (SELLER, ADMIN) */}
+              {/* 판매자 기능 (SELLER, ADMIN) */}
               <Route path="/seller/dashboard" element={
                 <ProtectedRoute>
                   <SellerDashboardPage />
                 </ProtectedRoute>
               } />
+              <Route path="/seller/products" element={
+                <ProtectedRoute>
+                  <SellerProductListPage />
+                </ProtectedRoute>
+              } />
 
-              {/* 마이페이지 */}
+              {/* 일반 기능 (로그인 필요) */}
               <Route path="/mypage" element={
                 <ProtectedRoute>
                   <MyPage />
                 </ProtectedRoute>
               } />
-
-              {/* TODO: 추가 페이지들 */}
-              <Route path="/orders" element={
-                <ProtectedRoute>
-                  <div style={styles.container}>
-                    <h1>내 주문 목록</h1>
-                    <p>주문 목록 페이지 (구현 예정)</p>
-                  </div>
-                </ProtectedRoute>
-              } />
-
               <Route path="/notifications" element={
                 <ProtectedRoute>
-                  <div style={styles.container}>
-                    <h1>알림</h1>
-                    <p>알림 페이지 (구현 예정)</p>
-                  </div>
+                  <NotificationPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/coupons" element={
+                <ProtectedRoute>
+                  <CouponPage />
                 </ProtectedRoute>
               } />
 
-              <Route path="/seller/products" element={
-                <ProtectedRoute>
+              {/* 관리자 기능 (ADMIN만) */}
+              <Route path="/admin/users" element={
+                <ProtectedRoute requiredRole="ROLE_ADMIN">
                   <div style={styles.container}>
-                    <h1>상품 관리</h1>
-                    <p>상품 관리 페이지 (구현 예정)</p>
+                    <h1>회원 관리</h1>
+                    <p>관리자 전용 회원 관리 페이지 (구현 예정)</p>
+                  </div>
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/categories" element={
+                <ProtectedRoute requiredRole="ROLE_ADMIN">
+                  <div style={styles.container}>
+                    <h1>카테고리 관리</h1>
+                    <p>관리자 전용 카테고리 관리 페이지 (구현 예정)</p>
                   </div>
                 </ProtectedRoute>
               } />
@@ -397,6 +443,7 @@ const styles = {
     display: 'flex',
     gap: '20px',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   navLink: {
     color: '#333',
