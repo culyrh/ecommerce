@@ -15,15 +15,27 @@ import OrderCreatePage from './pages/OrderCreatePage';
 import OrderListPage from './pages/OrderListPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 
+// 새로 추가된 페이지들
+import CartPage from './pages/CartPage';
+import CouponPage from './pages/CouponPage';
+import NotificationPage from './pages/NotificationPage';
+import ProfilePage from './pages/ProfilePage';
+import MyReviewsPage from './pages/MyReviewsPage';
+import RestockPage from './pages/RestockPage';
+
 // 레이아웃 컴포넌트
 function Layout({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [cartCount, setCartCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
   const accessToken = localStorage.getItem('accessToken');
 
   useEffect(() => {
     if (accessToken) {
       loadUser();
+      loadCartCount();
+      loadNotificationCount();
     }
   }, [accessToken]);
 
@@ -36,6 +48,21 @@ function Layout({ children }) {
       if (err.status === 401) {
         handleLogout();
       }
+    }
+  };
+
+  const loadCartCount = () => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    setCartCount(cart.length);
+  };
+
+  const loadNotificationCount = async () => {
+    try {
+      const data = await apiService.getMyNotifications(0, 100);
+      const unreadCount = data.content.filter(n => !n.read).length;
+      setNotificationCount(unreadCount);
+    } catch (err) {
+      console.error('알림 로딩 실패:', err);
     }
   };
 
@@ -62,6 +89,22 @@ function Layout({ children }) {
 
             {accessToken && user ? (
               <>
+                {/* 장바구니 */}
+                <Link to="/cart" style={styles.navLinkWithBadge}>
+                  🛒 장바구니
+                  {cartCount > 0 && (
+                    <span style={styles.badge}>{cartCount}</span>
+                  )}
+                </Link>
+
+                {/* 알림 */}
+                <Link to="/notifications" style={styles.navLinkWithBadge}>
+                  🔔
+                  {notificationCount > 0 && (
+                    <span style={styles.badge}>{notificationCount}</span>
+                  )}
+                </Link>
+
                 {user.role === 'ROLE_USER' && (
                   <>
                     <Link to="/orders" style={styles.navLink}>
@@ -84,12 +127,10 @@ function Layout({ children }) {
                   </>
                 )}
 
-                <Link to="/mypage" style={styles.navLink}>
-                  마이페이지
-                </Link>
-
                 <div style={styles.userInfo}>
-                  <span style={styles.userName}>{user.name}님</span>
+                  <Link to="/profile" style={styles.userName}>
+                    {user.name}님
+                  </Link>
                   <button onClick={handleLogout} style={styles.logoutBtn}>
                     로그아웃
                   </button>
@@ -221,54 +262,6 @@ function ProtectedRoute({ children, requiredRole }) {
   return children;
 }
 
-// 마이페이지
-function MyPage() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
-    try {
-      const userData = await apiService.getCurrentUser();
-      setUser(userData);
-    } catch (err) {
-      console.error('사용자 정보 로딩 실패:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div style={styles.loading}>로딩 중...</div>;
-  if (!user) return <div>사용자 정보를 불러올 수 없습니다.</div>;
-
-  return (
-    <div style={styles.container}>
-      <h1>마이페이지</h1>
-      <div style={styles.infoCard}>
-        <div style={styles.infoRow}>
-          <span style={styles.infoLabel}>이름:</span>
-          <span style={styles.infoValue}>{user.name}</span>
-        </div>
-        <div style={styles.infoRow}>
-          <span style={styles.infoLabel}>이메일:</span>
-          <span style={styles.infoValue}>{user.email}</span>
-        </div>
-        <div style={styles.infoRow}>
-          <span style={styles.infoLabel}>역할:</span>
-          <span style={styles.infoValue}>
-            {user.role === 'ROLE_USER' && '일반 회원'}
-            {user.role === 'ROLE_SELLER' && '판매자'}
-            {user.role === 'ROLE_ADMIN' && '관리자'}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // 메인 App 컴포넌트
 function App() {
   return (
@@ -289,6 +282,13 @@ function App() {
               <Route path="/products" element={<ProductListPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />
 
+              {/* 장바구니 */}
+              <Route path="/cart" element={
+                <ProtectedRoute>
+                  <CartPage />
+                </ProtectedRoute>
+              } />
+
               {/* 주문 관련 (로그인 필요) */}
               <Route path="/orders/create" element={
                 <ProtectedRoute>
@@ -303,6 +303,33 @@ function App() {
               <Route path="/orders/:id" element={
                 <ProtectedRoute>
                   <OrderDetailPage />
+                </ProtectedRoute>
+              } />
+
+              {/* 사용자 페이지 (로그인 필요) */}
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/coupons" element={
+                <ProtectedRoute>
+                  <CouponPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/notifications" element={
+                <ProtectedRoute>
+                  <NotificationPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/reviews" element={
+                <ProtectedRoute>
+                  <MyReviewsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/restock" element={
+                <ProtectedRoute>
+                  <RestockPage />
                 </ProtectedRoute>
               } />
 
@@ -322,13 +349,6 @@ function App() {
               <Route path="/seller/products" element={
                 <ProtectedRoute>
                   <SellerProductListPage />
-                </ProtectedRoute>
-              } />
-
-              {/* 일반 기능 (로그인 필요) */}
-              <Route path="/mypage" element={
-                <ProtectedRoute>
-                  <MyPage />
                 </ProtectedRoute>
               } />
             </Routes>
@@ -379,6 +399,13 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500',
   },
+  navLinkWithBadge: {
+    position: 'relative',
+    color: '#333',
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontWeight: '500',
+  },
   navLinkPrimary: {
     color: 'white',
     backgroundColor: '#007bff',
@@ -387,6 +414,19 @@ const styles = {
     textDecoration: 'none',
     fontSize: '14px',
     fontWeight: 'bold',
+  },
+  badge: {
+    position: 'absolute',
+    top: '-8px',
+    right: '-8px',
+    backgroundColor: '#dc3545',
+    color: 'white',
+    fontSize: '10px',
+    fontWeight: 'bold',
+    padding: '2px 6px',
+    borderRadius: '10px',
+    minWidth: '18px',
+    textAlign: 'center',
   },
   userInfo: {
     display: 'flex',
@@ -397,6 +437,7 @@ const styles = {
     fontSize: '14px',
     fontWeight: 'bold',
     color: '#333',
+    textDecoration: 'none',
   },
   logoutBtn: {
     padding: '8px 16px',
@@ -504,31 +545,6 @@ const styles = {
     padding: '40px',
     fontSize: '18px',
     color: '#666',
-  },
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '20px',
-  },
-  infoCard: {
-    backgroundColor: 'white',
-    padding: '30px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  infoRow: {
-    display: 'flex',
-    padding: '15px 0',
-    borderBottom: '1px solid #e9ecef',
-  },
-  infoLabel: {
-    width: '150px',
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  infoValue: {
-    flex: 1,
-    color: '#333',
   },
 };
 
