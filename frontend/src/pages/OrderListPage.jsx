@@ -307,4 +307,3 @@ const styles = {
 };
 
 export default OrderListPage;
-ENDFILE
