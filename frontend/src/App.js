@@ -64,7 +64,7 @@ function Layout({ children }) {
   const loadNotificationCount = async () => {
     try {
       const data = await apiService.getMyNotifications(0, 100);
-      const unreadCount = data.content.filter(n => !n.read).length;
+      const unreadCount = data.content.filter(n => !n.isRead).length;
       setNotificationCount(unreadCount);
     } catch (err) {
       // 알림 로딩 실패는 무시 (서버 문제일 수 있음)
@@ -114,9 +114,6 @@ function Layout({ children }) {
 
                 {user.role === 'ROLE_USER' && (
                   <>
-                    <Link to="/orders" style={styles.navLink}>
-                      내 주문
-                    </Link>
                     <Link to="/seller/register" style={styles.navLinkPrimary}>
                       판매자 되기
                     </Link>
