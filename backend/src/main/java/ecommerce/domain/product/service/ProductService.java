@@ -83,6 +83,27 @@ public class ProductService {
     }
 
     /**
+     * 내 상품 목록 조회 (판매자)
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> getMyProducts(String email, Pageable pageable) {
+        log.info("내 상품 목록 조회: email={}", email);
+
+        // User 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND));
+
+        // Seller 조회
+        Seller seller = sellerRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SELLER_NOT_FOUND));
+
+        // Seller의 상품 목록 조회
+        Page<Product> products = productRepository.findBySellerId(seller.getId(), pageable);
+
+        return products.map(ProductResponse::from);
+    }
+
+    /**
      * 상품 목록 조회 (검색/정렬/페이징)
      */
     @Transactional(readOnly = true)
@@ -98,10 +119,18 @@ public class ProductService {
         Sort sort = createSort(searchRequest);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        // 동적 쿼리 생성
-        Specification<Product> spec = ProductSpecification.searchProducts(searchRequest);
+        // 검색 조건 설정
+        Specification<Product> spec = Specification.where(null);
 
-        // 조회
+        if (searchRequest.getKeyword() != null && !searchRequest.getKeyword().isBlank()) {
+            spec = spec.and(ProductSpecification.hasKeyword(searchRequest.getKeyword()));
+        }
+
+        if (searchRequest.getCategoryId() != null) {
+            spec = spec.and(ProductSpecification.hasCategoryId(searchRequest.getCategoryId()));
+        }
+
+        // 상품 조회
         Page<Product> products = productRepository.findAll(spec, pageable);
 
         return products.map(ProductResponse::from);
@@ -111,10 +140,10 @@ public class ProductService {
      * 상품 상세 조회
      */
     @Transactional(readOnly = true)
-    public ProductResponse getProductById(Long id) {
-        log.info("상품 상세 조회: productId={}", id);
+    public ProductResponse getProduct(Long productId) {
+        log.info("상품 상세 조회: productId={}", productId);
 
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND));
 
         return ProductResponse.from(product);
@@ -124,29 +153,31 @@ public class ProductService {
      * 상품 수정
      */
     @Transactional
-    public ProductResponse updateProduct(String email, Long id, ProductRequest request) {
-        log.info("상품 수정: email={}, productId={}", email, id);
+    public ProductResponse updateProduct(String email, Long productId, ProductRequest request) {
+        log.info("상품 수정 시도: email={}, productId={}", email, productId);
 
         // 사용자 조회
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // 판매자 조회
-        Seller seller = sellerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SELLER_NOT_FOUND));
-
         // 상품 조회
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 본인 상품인지 확인
-        if (user.getRole() != Role.ROLE_ADMIN) {
-            if (!product.getSeller().getId().equals(seller.getId())) {
-                throw new ForbiddenException(ErrorCode.ACCESS_DENIED, "본인의 상품만 수정할 수 있습니다");
-            }
+        // 권한 확인 (본인 상품인지 또는 관리자인지)
+        if (!product.getSeller().getUser().getId().equals(user.getId()) &&
+                !user.getRoles().contains(Role.ROLE_ADMIN)) {
+            throw new ForbiddenException(ErrorCode.FORBIDDEN);
         }
 
-        // 변경 사항 적용
+        // 카테고리 업데이트
+        if (request.getCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND));
+            product.setCategory(category);
+        }
+
+        // 상품 정보 업데이트
         if (request.getName() != null) {
             product.setName(request.getName());
         }
@@ -158,16 +189,11 @@ public class ProductService {
         }
         if (request.getStock() != null) {
             product.setStock(request.getStock());
-            // 재고에 따른 상태 변경
+            // 재고에 따라 상태 업데이트
             product.setStatus(request.getStock() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
         }
         if (request.getImageUrl() != null) {
             product.setImageUrl(request.getImageUrl());
-        }
-        if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND));
-            product.setCategory(category);
         }
 
         Product updatedProduct = productRepository.save(product);
@@ -180,104 +206,81 @@ public class ProductService {
      * 상품 삭제
      */
     @Transactional
-    public void deleteProduct(String email, Long id) {
-        log.info("상품 삭제: email={}, productId={}", email, id);
+    public void deleteProduct(String email, Long productId) {
+        log.info("상품 삭제 시도: email={}, productId={}", email, productId);
 
         // 사용자 조회
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // 판매자 조회
-        Seller seller = sellerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SELLER_NOT_FOUND));
-
         // 상품 조회
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 본인 상품인지 확인
-        if (!product.getSeller().getId().equals(seller.getId())) {
-            throw new ForbiddenException(ErrorCode.ACCESS_DENIED, "본인의 상품만 삭제할 수 있습니다");
+        // 권한 확인 (본인 상품인지 또는 관리자인지)
+        if (!product.getSeller().getUser().getId().equals(user.getId()) &&
+                !user.getRoles().contains(Role.ROLE_ADMIN)) {
+            throw new ForbiddenException(ErrorCode.FORBIDDEN);
         }
 
         productRepository.delete(product);
-        log.info("상품 삭제 완료: productId={}", id);
+        log.info("상품 삭제 완료: productId={}", productId);
     }
 
     /**
-     * 재고 업데이트 (재입고 이벤트 발행 포함)
+     * 재고 업데이트
      */
     @Transactional
-    public ProductResponse updateStock(String email, Long id, StockUpdateRequest request) {
-        log.info("재고 업데이트: email={}, productId={}, quantity={}", email, id, request.getQuantity());
+    public ProductResponse updateStock(String email, Long productId, StockUpdateRequest request) {
+        log.info("재고 업데이트: email={}, productId={}, newStock={}",
+                email, productId, request.getStock());
 
         // 사용자 조회
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // 판매자 조회
-        Seller seller = sellerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SELLER_NOT_FOUND));
-
         // 상품 조회
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 본인 상품인지 확인
-        if (!product.getSeller().getId().equals(seller.getId())) {
-            throw new ForbiddenException(ErrorCode.ACCESS_DENIED, "본인의 상품만 재고를 수정할 수 있습니다");
+        // 권한 확인
+        if (!product.getSeller().getUser().getId().equals(user.getId()) &&
+                !user.getRoles().contains(Role.ROLE_ADMIN)) {
+            throw new ForbiddenException(ErrorCode.FORBIDDEN);
         }
-
-        // 이전 재고 저장 (재입고 이벤트 판단용)
-        int previousStock = product.getStock();
 
         // 재고 업데이트
-        product.setStock(request.getQuantity());
-        product.setStatus(request.getQuantity() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
+        product.setStock(request.getStock());
+        product.setStatus(request.getStock() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
 
         Product updatedProduct = productRepository.save(product);
-
-        // 재입고 이벤트 발행 (0 → 1+ 변경 시)
-        if (previousStock == 0 && request.getQuantity() > 0) {
-            log.info("재입고 이벤트 발행: productId={}, previousStock={}, newStock={}",
-                    id, previousStock, request.getQuantity());
-            // TODO: Phase 7에서 ProductRestockedEvent 발행 구현
-            // applicationEventPublisher.publishEvent(new ProductRestockedEvent(id, previousStock, request.getQuantity()));
-        }
-
-        log.info("재고 업데이트 완료: productId={}, newStock={}", updatedProduct.getId(), updatedProduct.getStock());
+        log.info("재고 업데이트 완료: productId={}, newStock={}", productId, request.getStock());
 
         return ProductResponse.from(updatedProduct);
     }
 
     /**
-     * 네이버 쇼핑 API 검색
-     */
-    public NaverProductSearchResponse searchNaverProducts(String keyword, Integer display, Integer start) {
-        log.info("네이버 쇼핑 API 검색: keyword={}, display={}, start={}", keyword, display, start);
-
-        if (keyword == null || keyword.trim().isEmpty()) {
-            throw new IllegalArgumentException("검색 키워드는 필수입니다");
-        }
-
-        return naverShoppingApiClient.searchProducts(keyword, display, start);
-    }
-
-    /**
-     * 상품 리뷰 목록 조회
+     * 상품 리뷰 조회
      */
     @Transactional(readOnly = true)
     public Page<ReviewResponse> getProductReviews(Long productId, Pageable pageable) {
-        log.info("상품 리뷰 목록 조회: productId={}, page={}", productId, pageable.getPageNumber());
+        log.info("상품 리뷰 조회: productId={}", productId);
 
         // 상품 존재 확인
-        productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND));
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
 
-        // 리뷰 조회
         Page<Review> reviews = reviewRepository.findByProductId(productId, pageable);
-
         return reviews.map(ReviewResponse::from);
+    }
+
+    /**
+     * 네이버 쇼핑 API로 상품 검색
+     */
+    public NaverProductSearchResponse searchNaverProducts(String query, int start, int display) {
+        log.info("네이버 쇼핑 검색: query={}, start={}, display={}", query, start, display);
+        return naverShoppingApiClient.searchProducts(query, start, display);
     }
 
     /**

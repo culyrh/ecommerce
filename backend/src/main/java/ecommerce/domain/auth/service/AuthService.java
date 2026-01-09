@@ -16,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -47,17 +49,23 @@ public class AuthService {
                 .name(request.getName())
                 .phone(request.getPhone())
                 .birthDate(request.getBirthDate())
-                .role(Role.ROLE_USER)
                 .isActive(true)
                 .build();
 
-        User savedUser = userRepository.save(user);
-        log.info("회원가입 성공: userId={}, email={}", savedUser.getId(), savedUser.getEmail());
+        // ROLE_USER는 @PrePersist에서 자동으로 추가됨
 
-        // JWT 토큰 발급
+        User savedUser = userRepository.save(user);
+        log.info("회원가입 성공: userId={}, email={}, roles={}",
+                savedUser.getId(), savedUser.getEmail(), savedUser.getRoles());
+
+        // JWT 토큰 발급 (Set<Role>을 문자열로 변환)
+        String roles = savedUser.getRoles().stream()
+                .map(Role::name)
+                .collect(Collectors.joining(","));
+
         String accessToken = jwtTokenProvider.createAccessToken(
                 savedUser.getEmail(),
-                savedUser.getRole().name()
+                roles
         );
         String refreshToken = jwtTokenProvider.createRefreshToken(savedUser.getEmail());
 
@@ -89,12 +97,17 @@ public class AuthService {
             throw new UnauthorizedException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        log.info("로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
+        log.info("로그인 성공: userId={}, email={}, roles={}",
+                user.getId(), user.getEmail(), user.getRoles());
 
-        // JWT 토큰 발급
+        // JWT 토큰 발급 (Set<Role>을 문자열로 변환)
+        String roles = user.getRoles().stream()
+                .map(Role::name)
+                .collect(Collectors.joining(","));
+
         String accessToken = jwtTokenProvider.createAccessToken(
                 user.getEmail(),
-                user.getRole().name()
+                roles
         );
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
 

@@ -114,6 +114,17 @@ class ApiService {
 
   // ==================== PRODUCT ====================
   
+  async getMyProducts(page = 0, size = 20) {
+    const response = await fetch(
+      `${API_BASE_URL}/products/my?page=${page}&size=${size}`,
+      {
+        method: 'GET',
+        headers: this.getHeaders(true),
+      }
+    );
+    return this.handleResponse(response);
+  }
+
   async getProducts(params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const response = await fetch(`${API_BASE_URL}/products?${queryString}`, {

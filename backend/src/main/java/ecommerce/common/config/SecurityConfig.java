@@ -32,29 +32,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF 비활성화 (JWT 사용)
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 세션 사용 안 함 (Stateless)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
-                // 요청 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 불필요 경로
+                        // ===== PUBLIC (인증 불필요) =====
                         .requestMatchers("/", "/health", "/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                        // 재입고 투표 조회 public
                         .requestMatchers(HttpMethod.GET, "/api/restock-votes/products/**").permitAll()
 
-                        // ADMIN 전용 경로
+                        // ===== ADMIN 전용 =====
                         .requestMatchers("/api/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")
@@ -63,42 +55,38 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/notifications").hasRole("ADMIN")
                         .requestMatchers("/internal/seed").hasRole("ADMIN")
 
-                        // SELLER 관련 경로
+                        // ===== SELLER 관련 (순서 중요!) =====
+                        // 판매자 등록은 USER도 가능
                         .requestMatchers(HttpMethod.POST, "/api/sellers").hasAnyRole("USER", "SELLER", "ADMIN")
+                        // 나머지 판매자 기능은 SELLER만
                         .requestMatchers("/api/sellers/**").hasAnyRole("SELLER", "ADMIN")
 
-                        // PRODUCT 관련
-                        .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("USER", "SELLER", "ADMIN")
+                        // ===== PRODUCT 관리 =====
+                        .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("SELLER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("SELLER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("SELLER", "ADMIN")
 
-                        // USER 전용 경로
+                        // ===== USER 기능 (SELLER도 사용 가능) =====
                         .requestMatchers("/api/users/me/**").hasAnyRole("USER", "SELLER", "ADMIN")
+                        .requestMatchers("/api/cart/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/orders/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/reviews/**").hasAnyRole("USER", "SELLER", "ADMIN")
-                        .requestMatchers("/api/cart/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/restock-votes/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/restock-notifications/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/user-coupons/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/notifications/**").hasAnyRole("USER", "SELLER", "ADMIN")
 
-                        // 나머지는 인증 필요
+                        // ===== 나머지 =====
                         .anyRequest().authenticated()
                 )
-
-                // JWT 필터 추가
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * CORS 설정
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
         configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -108,13 +96,9 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 
-    /**
-     * 비밀번호 암호화
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

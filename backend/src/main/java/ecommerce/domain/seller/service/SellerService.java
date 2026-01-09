@@ -54,13 +54,12 @@ public class SellerService {
 
         Seller savedSeller = sellerRepository.save(seller);
 
-        // 사용자 역할에 SELLER 추가
-        if (user.getRole() == Role.ROLE_USER) {
-            user.setRole(Role.ROLE_SELLER);
-            userRepository.save(user);
-        }
+        // 사용자에게 SELLER 역할 추가 (USER 역할은 유지)
+        user.addRole(Role.ROLE_SELLER);
+        userRepository.save(user);
 
-        log.info("판매자 등록 완료: sellerId={}, userId={}", savedSeller.getId(), user.getId());
+        log.info("판매자 등록 완료: sellerId={}, userId={}, roles={}",
+                savedSeller.getId(), user.getId(), user.getRoles());
 
         return SellerResponse.from(savedSeller);
     }
@@ -133,10 +132,11 @@ public class SellerService {
         // 판매자 삭제
         sellerRepository.delete(seller);
 
-        // 사용자 역할을 다시 USER로 변경
-        user.setRole(Role.ROLE_USER);
+        // SELLER 역할 제거 (USER 역할은 유지)
+        user.removeRole(Role.ROLE_SELLER);
         userRepository.save(user);
 
-        log.info("판매자 등록 해제 완료: sellerId={}, userId={}", seller.getId(), user.getId());
+        log.info("판매자 등록 해제 완료: sellerId={}, userId={}, roles={}",
+                seller.getId(), user.getId(), user.getRoles());
     }
 }

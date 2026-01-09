@@ -15,7 +15,7 @@ function SellerProductListPage() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const data = await apiService.getProducts({ sellerId: 'me' });
+      const data = await apiService.getMyProducts(0, 100);
       setProducts(data.content || []);
       setError('');
     } catch (err) {

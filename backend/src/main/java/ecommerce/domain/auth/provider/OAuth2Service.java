@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -53,7 +54,8 @@ public class OAuth2Service {
             // 3. 사용자 등록 또는 조회
             User user = findOrCreateUser(userInfo);
 
-            log.info("Naver 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
+            log.info("Naver 로그인 성공: userId={}, email={}, roles={}",
+                    user.getId(), user.getEmail(), user.getRoles());
 
             // 4. JWT 토큰 발급
             return createTokenResponse(user);
@@ -79,9 +81,26 @@ public class OAuth2Service {
         );
 
         HttpEntity<String> request = new HttpEntity<>(body, headers);
-        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
 
-        return (String) response.getBody().get("access_token");
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    tokenUrl,
+                    HttpMethod.POST,
+                    request,
+                    Map.class
+            );
+
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody == null || !responseBody.containsKey("access_token")) {
+                throw new UnauthorizedException(ErrorCode.UNAUTHORIZED, "Access Token 획득 실패");
+            }
+
+            return (String) responseBody.get("access_token");
+
+        } catch (Exception e) {
+            log.error("Naver Access Token 획득 실패", e);
+            throw new UnauthorizedException(ErrorCode.UNAUTHORIZED, "Access Token 획득에 실패했습니다");
+        }
     }
 
     /**
@@ -91,33 +110,43 @@ public class OAuth2Service {
         String userInfoUrl = "https://openapi.naver.com/v1/nid/me";
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
+        headers.add("Authorization", "Bearer " + accessToken);
 
         HttpEntity<String> request = new HttpEntity<>(headers);
-        ResponseEntity<Map> response = restTemplate.exchange(
-                userInfoUrl,
-                HttpMethod.GET,
-                request,
-                Map.class
-        );
 
-        Map<String, Object> body = response.getBody();
-        Map<String, Object> responseData = (Map<String, Object>) body.get("response");
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    userInfoUrl,
+                    HttpMethod.GET,
+                    request,
+                    Map.class
+            );
 
-        // Naver API 응답 구조: { "response": { "id": "...", "email": "...", "name": "..." } }
-        return OAuth2UserInfo.builder()
-                .email((String) responseData.get("email"))
-                .name((String) responseData.get("name"))
-                .provider("NAVER")
-                .providerId((String) responseData.get("id"))
-                .build();
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody == null || !responseBody.containsKey("response")) {
+                throw new UnauthorizedException(ErrorCode.UNAUTHORIZED, "사용자 정보 조회 실패");
+            }
+
+            Map<String, Object> naverAccount = (Map<String, Object>) responseBody.get("response");
+
+            return OAuth2UserInfo.builder()
+                    .provider("naver")
+                    .providerId((String) naverAccount.get("id"))
+                    .email((String) naverAccount.get("email"))
+                    .name((String) naverAccount.get("name"))
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Naver 사용자 정보 조회 실패", e);
+            throw new UnauthorizedException(ErrorCode.UNAUTHORIZED, "사용자 정보 조회에 실패했습니다");
+        }
     }
 
     /**
-     * 사용자 등록 또는 조회
+     * 사용자 조회 또는 생성
      */
     private User findOrCreateUser(OAuth2UserInfo userInfo) {
-        // 기존 소셜 로그인 계정 확인
+        // Provider와 ProviderId로 기존 사용자 조회
         Optional<User> existingUser = userRepository.findByProviderAndProviderId(
                 userInfo.getProvider(),
                 userInfo.getProviderId()
@@ -143,9 +172,10 @@ public class OAuth2Service {
                 .name(userInfo.getName())
                 .provider(userInfo.getProvider())
                 .providerId(userInfo.getProviderId())
-                .role(Role.ROLE_USER)
                 .isActive(true)
                 .build();
+
+        // ROLE_USER는 @PrePersist에서 자동으로 추가됨
 
         return userRepository.save(newUser);
     }
@@ -154,9 +184,14 @@ public class OAuth2Service {
      * JWT 토큰 응답 생성
      */
     private TokenResponse createTokenResponse(User user) {
+        // Set<Role>을 콤마로 구분된 문자열로 변환
+        String roles = user.getRoles().stream()
+                .map(Role::name)
+                .collect(Collectors.joining(","));
+
         String accessToken = jwtTokenProvider.createAccessToken(
                 user.getEmail(),
-                user.getRole().name()
+                roles
         );
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
 

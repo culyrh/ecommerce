@@ -30,14 +30,16 @@ public class JwtTokenProvider {
 
     /**
      * Access Token 생성
+     * @param email 사용자 이메일
+     * @param roles 콤마로 구분된 역할 문자열 (예: "ROLE_USER,ROLE_SELLER")
      */
-    public String createAccessToken(String email, String role) {
+    public String createAccessToken(String email, String roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
                 .subject(email)
-                .claim("role", role)
+                .claim("roles", roles)
                 .claim("type", "access")
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -97,16 +99,17 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰에서 역할(Role) 추출
+     * 토큰에서 역할(Roles) 추출
+     * @return 콤마로 구분된 역할 문자열 (예: "ROLE_USER,ROLE_SELLER")
      */
-    public String getRoleFromToken(String token) {
+    public String getRolesFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
 
-        return claims.get("role", String.class);
+        return claims.get("roles", String.class);
     }
 
     /**

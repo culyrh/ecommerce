@@ -49,6 +49,22 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('USER', 'SELLER', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "내 상품 목록 조회", description = "현재 로그인한 판매자의 상품 목록을 조회합니다")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @ApiResponse(responseCode = "401", description = "인증 실패", content = @Content)
+    @ApiResponse(responseCode = "404", description = "판매자 정보를 찾을 수 없음", content = @Content)
+    public ResponseEntity<Page<ProductResponse>> getMyProducts(
+            @Parameter(hidden = true) @AuthenticationPrincipal String email,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        log.info("GET /api/products/my - email: {}", email);
+        Page<ProductResponse> response = productService.getMyProducts(email, pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
     @Operation(
             summary = "상품 목록 조회",
@@ -85,9 +101,9 @@ public class ProductController {
     @Operation(summary = "상품 상세 조회", description = "특정 상품의 상세 정보를 조회합니다 (인증 불필요)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @ApiResponse(responseCode = "404", description = "상품을 찾을 수 없음", content = @Content)
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ProductResponse> getProduct(@PathVariable Long id) {
         log.info("GET /api/products/{}", id);
-        ProductResponse response = productService.getProductById(id);
+        ProductResponse response = productService.getProduct(id);
         return ResponseEntity.ok(response);
     }
 
@@ -144,7 +160,7 @@ public class ProductController {
             @RequestParam(required = false, defaultValue = "1") Integer start
     ) {
         log.info("GET /api/products/naver/search - keyword: {}, display: {}", keyword, display);
-        NaverProductSearchResponse response = productService.searchNaverProducts(keyword, display, start);
+        NaverProductSearchResponse response = productService.searchNaverProducts(keyword, start, display);
         return ResponseEntity.ok(response);
     }
 
@@ -165,7 +181,7 @@ public class ProductController {
             @PathVariable Long id,
             @Valid @RequestBody StockUpdateRequest request
     ) {
-        log.info("PUT /api/products/{}/stock - email: {}, quantity: {}", id, email, request.getQuantity());
+        log.info("PUT /api/products/{}/stock - email: {}, stock: {}", id, email, request.getStock());
         ProductResponse response = productService.updateStock(email, id, request);
         return ResponseEntity.ok(response);
     }

@@ -16,7 +16,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -39,22 +42,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 2. 토큰 검증 및 인증 정보 설정
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
                 String email = jwtTokenProvider.getEmailFromToken(jwt);
-                String role = jwtTokenProvider.getRoleFromToken(jwt);
+                String rolesString = jwtTokenProvider.getRolesFromToken(jwt);
 
-                // 3. Spring Security 인증 객체 생성
+                // 3. 콤마로 구분된 역할 문자열을 List<GrantedAuthority>로 변환
+                List<SimpleGrantedAuthority> authorities = Collections.emptyList();
+                if (StringUtils.hasText(rolesString)) {
+                    authorities = Arrays.stream(rolesString.split(","))
+                            .map(String::trim)
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
+                }
+
+                // 4. Spring Security 인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 email,
                                 null,
-                                Collections.singletonList(new SimpleGrantedAuthority(role))
+                                authorities
                         );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // 4. SecurityContext에 인증 정보 저장
+                // 5. SecurityContext에 인증 정보 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                log.debug("Set Authentication to security context for '{}', uri: {}", email, request.getRequestURI());
+                log.debug("Set Authentication to security context for '{}', roles: {}, uri: {}",
+                        email, rolesString, request.getRequestURI());
             }
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);
