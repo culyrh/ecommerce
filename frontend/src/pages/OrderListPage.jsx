@@ -105,7 +105,7 @@ function OrderListPage() {
                 </div>
 
                 <div style={styles.orderItems}>
-                  {order.orderItems.slice(0, 2).map((item, idx) => (
+                  {order.items && order.items.slice(0, 2).map((item, idx) => (
                     <div key={idx} style={styles.orderItem}>
                       <span>{item.productName}</span>
                       <span style={styles.orderItemQty}>
@@ -113,9 +113,9 @@ function OrderListPage() {
                       </span>
                     </div>
                   ))}
-                  {order.orderItems.length > 2 && (
+                  {order.items && order.items.length > 2 && (
                     <div style={styles.moreItems}>
-                      외 {order.orderItems.length - 2}개
+                      외 {order.items.length - 2}개
                     </div>
                   )}
                 </div>
@@ -123,7 +123,7 @@ function OrderListPage() {
                 <div style={styles.orderFooter}>
                   <span style={styles.totalLabel}>총 결제금액</span>
                   <span style={styles.totalAmount}>
-                    {formatPrice(order.totalAmount)}
+                    {formatPrice(order.finalAmount)}
                   </span>
                 </div>
               </div>

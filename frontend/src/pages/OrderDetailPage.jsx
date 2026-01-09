@@ -122,9 +122,9 @@ function OrderDetailPage() {
       </div>
 
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>주문 상품 ({order.orderItems.length})</h2>
+        <h2 style={styles.sectionTitle}>주문 상품 ({order.items ? order.items.length : 0})</h2>
         <div style={styles.itemList}>
-          {order.orderItems.map((item, idx) => (
+          {order.items && order.items.map((item, idx) => (
             <div key={idx} style={styles.itemCard}>
               <div style={styles.itemInfo}>
                 <div style={styles.itemName}>{item.productName}</div>
@@ -151,10 +151,10 @@ function OrderDetailPage() {
             <span>배송비</span>
             <span style={styles.paymentValue}>무료</span>
           </div>
-          {order.couponDiscount > 0 && (
+          {order.totalAmount !== order.finalAmount && (
             <div style={styles.paymentRow}>
-              <span>쿠폰 할인</span>
-              <span style={styles.discountValue}>-{formatPrice(order.couponDiscount)}</span>
+              <span>할인</span>
+              <span style={styles.discountValue}>-{formatPrice(order.totalAmount - order.finalAmount)}</span>
             </div>
           )}
           <div style={styles.paymentRowTotal}>

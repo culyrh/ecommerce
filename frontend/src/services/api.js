@@ -187,6 +187,58 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  // ==================== CART ====================
+  
+  async addToCart(productId, quantity) {
+    const response = await fetch(`${API_BASE_URL}/cart`, {
+      method: 'POST',
+      headers: this.getHeaders(true),
+      body: JSON.stringify({ productId, quantity }),
+    });
+    return this.handleResponse(response);
+  }
+
+  async getMyCart() {
+    const response = await fetch(`${API_BASE_URL}/cart`, {
+      method: 'GET',
+      headers: this.getHeaders(true),
+    });
+    return this.handleResponse(response);
+  }
+
+  async getCartCount() {
+    const response = await fetch(`${API_BASE_URL}/cart/count`, {
+      method: 'GET',
+      headers: this.getHeaders(true),
+    });
+    return this.handleResponse(response);
+  }
+
+  async updateCartItem(id, quantity) {
+    const response = await fetch(`${API_BASE_URL}/cart/${id}`, {
+      method: 'PUT',
+      headers: this.getHeaders(true),
+      body: JSON.stringify({ quantity }),
+    });
+    return this.handleResponse(response);
+  }
+
+  async removeCartItem(id) {
+    const response = await fetch(`${API_BASE_URL}/cart/${id}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(true),
+    });
+    return this.handleResponse(response);
+  }
+
+  async clearCart() {
+    const response = await fetch(`${API_BASE_URL}/cart`, {
+      method: 'DELETE',
+      headers: this.getHeaders(true),
+    });
+    return this.handleResponse(response);
+  }
+
   // ==================== ORDER ====================
   
   async createOrder(data) {
@@ -302,7 +354,7 @@ class ApiService {
   
   async getMyNotifications(page = 0, size = 20) {
     const response = await fetch(
-      `${API_BASE_URL}/notifications/me?page=${page}&size=${size}`,
+      `${API_BASE_URL}/notifications?page=${page}&size=${size}`,
       {
         method: 'GET',
         headers: this.getHeaders(true),
@@ -312,7 +364,7 @@ class ApiService {
   }
 
   async markNotificationAsRead(id) {
-    const response = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+    const response = await fetch(`${API_BASE_URL}/notifications/${id}`, {
       method: 'PUT',
       headers: this.getHeaders(true),
     });
@@ -323,7 +375,7 @@ class ApiService {
   
   async getMyCoupons(page = 0, size = 20) {
     const response = await fetch(
-      `${API_BASE_URL}/user-coupons/me?page=${page}&size=${size}`,
+      `${API_BASE_URL}/user-coupons/my?page=${page}&size=${size}`,
       {
         method: 'GET',
         headers: this.getHeaders(true),

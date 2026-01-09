@@ -51,9 +51,14 @@ function Layout({ children }) {
     }
   };
 
-  const loadCartCount = () => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    setCartCount(cart.length);
+  const loadCartCount = async () => {
+    try {
+      const count = await apiService.getCartCount();
+      setCartCount(count || 0);
+    } catch (err) {
+      console.error('장바구니 카운트 로딩 실패:', err);
+      setCartCount(0);
+    }
   };
 
   const loadNotificationCount = async () => {
@@ -62,7 +67,9 @@ function Layout({ children }) {
       const unreadCount = data.content.filter(n => !n.read).length;
       setNotificationCount(unreadCount);
     } catch (err) {
+      // 알림 로딩 실패는 무시 (서버 문제일 수 있음)
       console.error('알림 로딩 실패:', err);
+      setNotificationCount(0);
     }
   };
 
@@ -99,7 +106,7 @@ function Layout({ children }) {
 
                 {/* 알림 */}
                 <Link to="/notifications" style={styles.navLinkWithBadge}>
-                  🔔
+                  🔔 알림
                   {notificationCount > 0 && (
                     <span style={styles.badge}>{notificationCount}</span>
                   )}

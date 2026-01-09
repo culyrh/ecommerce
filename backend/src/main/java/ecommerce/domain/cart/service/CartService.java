@@ -40,12 +40,12 @@ public class CartService {
 
         // 상품 상태 확인
         if (product.getStatus() != ProductStatus.ACTIVE) {
-            throw new UnprocessableEntityException("품절된 상품입니다");
+            throw new UnprocessableEntityException(ErrorCode.UNPROCESSABLE_ENTITY);
         }
 
         // 재고 확인
         if (product.getStock() < request.getQuantity()) {
-            throw new UnprocessableEntityException("재고가 부족합니다");
+            throw new UnprocessableEntityException(ErrorCode.INSUFFICIENT_STOCK);
         }
 
         // 이미 장바구니에 있는 상품인지 확인
@@ -58,7 +58,7 @@ public class CartService {
 
             // 재고 확인
             if (product.getStock() < newQuantity) {
-                throw new UnprocessableEntityException("재고가 부족합니다");
+                throw new UnprocessableEntityException(ErrorCode.INSUFFICIENT_STOCK);
             }
 
             cartItem.setQuantity(newQuantity);
@@ -99,12 +99,12 @@ public class CartService {
 
         // 본인의 장바구니 항목인지 확인
         if (!cartItem.getUser().getId().equals(user.getId())) {
-            throw new UnprocessableEntityException("본인의 장바구니 항목만 수정할 수 있습니다");
+            throw new UnprocessableEntityException(ErrorCode.FORBIDDEN);
         }
 
         // 재고 확인
         if (cartItem.getProduct().getStock() < request.getQuantity()) {
-            throw new UnprocessableEntityException("재고가 부족합니다");
+            throw new UnprocessableEntityException(ErrorCode.INSUFFICIENT_STOCK);
         }
 
         cartItem.setQuantity(request.getQuantity());
@@ -124,7 +124,7 @@ public class CartService {
 
         // 본인의 장바구니 항목인지 확인
         if (!cartItem.getUser().getId().equals(user.getId())) {
-            throw new UnprocessableEntityException("본인의 장바구니 항목만 삭제할 수 있습니다");
+            throw new UnprocessableEntityException(ErrorCode.FORBIDDEN);
         }
 
         cartItemRepository.delete(cartItem);

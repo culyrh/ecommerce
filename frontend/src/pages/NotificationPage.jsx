@@ -39,8 +39,8 @@ function NotificationPage() {
   };
 
   const handleNotificationClick = async (notification) => {
-    // 읽지 않은 알림이면 읽음 처리
-    if (!notification.read) {
+    // 읽지 않은 알림이면 읽음 처리 (백엔드 필드명: isRead)
+    if (!notification.isRead) {
       await markAsRead(notification.id);
     }
 
@@ -49,9 +49,9 @@ function NotificationPage() {
       case 'ORDER_CONFIRMED':
       case 'ORDER_SHIPPED':
       case 'ORDER_DELIVERED':
-        // 주문 상세 페이지로 이동 (알림 메시지에서 주문 ID 추출 필요)
-        // 예: "주문 #123이 확정되었습니다"에서 123 추출
-        const orderIdMatch = notification.message.match(/#(\d+)/);
+        // 주문 상세 페이지로 이동 (알림 내용에서 주문 ID 추출 필요)
+        // 백엔드 필드명: content
+        const orderIdMatch = notification.content.match(/#(\d+)/);
         if (orderIdMatch) {
           navigate(`/orders/${orderIdMatch[1]}`);
         }
@@ -126,7 +126,7 @@ function NotificationPage() {
                 key={notification.id}
                 style={{
                   ...styles.notificationCard,
-                  ...(notification.read ? styles.notificationRead : styles.notificationUnread),
+                  ...(notification.isRead ? styles.notificationRead : styles.notificationUnread),
                 }}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -137,7 +137,7 @@ function NotificationPage() {
                 <div style={styles.notificationContent}>
                   <div style={styles.notificationHeader}>
                     <span style={styles.notificationTypeLabel}>
-                      {getNotificationTypeLabel(notification.type)}
+                      {notification.title}
                     </span>
                     <span style={styles.notificationTime}>
                       {formatDate(notification.createdAt)}
@@ -145,10 +145,10 @@ function NotificationPage() {
                   </div>
 
                   <p style={styles.notificationMessage}>
-                    {notification.message}
+                    {notification.content}
                   </p>
 
-                  {!notification.read && (
+                  {!notification.isRead && (
                     <span style={styles.unreadBadge}>NEW</span>
                   )}
                 </div>

@@ -20,8 +20,7 @@ function MyReviewsPage() {
       // 현재 사용자 정보 먼저 가져오기
       const currentUser = await apiService.getCurrentUser();
       
-      // API에 내 리뷰만 가져오는 엔드포인트가 없으므로
-      // 내 주문 목록을 가져와서 리뷰가 있는 상품들을 찾아야 함
+      // 내 주문 목록을 가져와서 리뷰가 있는 상품들을 찾음
       const orders = await apiService.getMyOrders(0, 100);
       
       // 각 주문의 상품들에 대한 리뷰를 가져옴
@@ -29,19 +28,30 @@ function MyReviewsPage() {
       const productIds = new Set();
       
       orders.content.forEach(order => {
-        order.items.forEach(item => {
-          if (!productIds.has(item.product.id)) {
-            productIds.add(item.product.id);
-            reviewPromises.push(
-              apiService.getProductReviews(item.product.id, 0, 100)
-                .then(data => ({
-                  productId: item.product.id,
-                  productName: item.product.name,
-                  reviews: data.content
-                }))
-            );
-          }
-        });
+        if (order.items) {
+          order.items.forEach(item => {
+            // OrderItemDto 구조: productId, productName 직접 제공
+            if (item.productId && !productIds.has(item.productId)) {
+              productIds.add(item.productId);
+              reviewPromises.push(
+                apiService.getProductReviews(item.productId, 0, 100)
+                  .then(data => ({
+                    productId: item.productId,
+                    productName: item.productName,
+                    reviews: data.content
+                  }))
+                  .catch(err => {
+                    console.error(`상품 ${item.productId} 리뷰 로딩 실패:`, err);
+                    return {
+                      productId: item.productId,
+                      productName: item.productName,
+                      reviews: []
+                    };
+                  })
+              );
+            }
+          });
+        }
       });
       
       const allReviews = await Promise.all(reviewPromises);

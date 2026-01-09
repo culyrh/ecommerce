@@ -49,17 +49,17 @@ function CouponPage() {
     }
   };
 
-  const isExpired = (coupon) => {
-    return new Date(coupon.validTo) < new Date();
+  const isExpired = (userCoupon) => {
+    return new Date(userCoupon.expiresAt) < new Date();
   };
 
-  const filteredCoupons = coupons.filter(coupon => {
+  const filteredCoupons = coupons.filter(userCoupon => {
     if (filter === 'AVAILABLE') {
-      return !coupon.used && !isExpired(coupon);
+      return !userCoupon.isUsed && !isExpired(userCoupon);
     } else if (filter === 'USED') {
-      return coupon.used;
+      return userCoupon.isUsed;
     } else if (filter === 'EXPIRED') {
-      return !coupon.used && isExpired(coupon);
+      return !userCoupon.isUsed && isExpired(userCoupon);
     }
     return true;
   });
@@ -83,7 +83,7 @@ function CouponPage() {
             ...(filter === 'AVAILABLE' ? styles.filterTabActive : {}),
           }}
         >
-          사용 가능 ({coupons.filter(c => !c.used && !isExpired(c)).length})
+          사용 가능 ({coupons.filter(c => !c.isUsed && !isExpired(c)).length})
         </button>
         <button
           onClick={() => setFilter('USED')}
@@ -92,7 +92,7 @@ function CouponPage() {
             ...(filter === 'USED' ? styles.filterTabActive : {}),
           }}
         >
-          사용 완료 ({coupons.filter(c => c.used).length})
+          사용 완료 ({coupons.filter(c => c.isUsed).length})
         </button>
         <button
           onClick={() => setFilter('EXPIRED')}
@@ -101,7 +101,7 @@ function CouponPage() {
             ...(filter === 'EXPIRED' ? styles.filterTabActive : {}),
           }}
         >
-          기간 만료 ({coupons.filter(c => !c.used && isExpired(c)).length})
+          기간 만료 ({coupons.filter(c => !c.isUsed && isExpired(c)).length})
         </button>
       </div>
 
@@ -114,57 +114,55 @@ function CouponPage() {
             {filter === 'EXPIRED' && '만료된 쿠폰이 없습니다.'}
           </div>
         ) : (
-          filteredCoupons.map(coupon => (
+          filteredCoupons.map(userCoupon => (
             <div
-              key={coupon.id}
+              key={userCoupon.id}
               style={{
                 ...styles.couponCard,
-                ...(coupon.used || isExpired(coupon) ? styles.couponCardDisabled : {}),
+                ...(userCoupon.isUsed || isExpired(userCoupon) ? styles.couponCardDisabled : {}),
               }}
             >
               <div style={styles.couponLeft}>
                 <div style={styles.discountBadge}>
-                  {getDiscountText(coupon)}
+                  {getDiscountText(userCoupon.coupon)}
                 </div>
               </div>
 
               <div style={styles.couponRight}>
                 <div style={styles.couponHeader}>
-                  <h3 style={styles.couponName}>{coupon.name}</h3>
+                  <h3 style={styles.couponName}>{userCoupon.coupon.name}</h3>
                   <span style={styles.couponType}>
-                    {getCouponTypeLabel(coupon.type)}
+                    {getCouponTypeLabel(userCoupon.coupon.type)}
                   </span>
                 </div>
 
-                <p style={styles.couponDescription}>{coupon.description}</p>
+                <p style={styles.couponCode}>코드: {userCoupon.coupon.code}</p>
 
                 <div style={styles.couponInfo}>
                   <div style={styles.infoRow}>
                     <span style={styles.infoLabel}>최소 주문금액:</span>
                     <span style={styles.infoValue}>
-                      {formatPrice(coupon.minOrderAmount)}
+                      {formatPrice(userCoupon.coupon.minOrderAmount)}
                     </span>
                   </div>
-                  {coupon.maxDiscountAmount && (
-                    <div style={styles.infoRow}>
-                      <span style={styles.infoLabel}>최대 할인:</span>
-                      <span style={styles.infoValue}>
-                        {formatPrice(coupon.maxDiscountAmount)}
-                      </span>
-                    </div>
-                  )}
                   <div style={styles.infoRow}>
                     <span style={styles.infoLabel}>유효기간:</span>
                     <span style={styles.infoValue}>
-                      {formatDate(coupon.validFrom)} ~ {formatDate(coupon.validTo)}
+                      {formatDate(userCoupon.coupon.validFrom)} ~ {formatDate(userCoupon.coupon.validUntil)}
+                    </span>
+                  </div>
+                  <div style={styles.infoRow}>
+                    <span style={styles.infoLabel}>발급일:</span>
+                    <span style={styles.infoValue}>
+                      {formatDate(userCoupon.issuedAt)}
                     </span>
                   </div>
                 </div>
 
-                {coupon.used && (
+                {userCoupon.isUsed && (
                   <div style={styles.usedBadge}>사용 완료</div>
                 )}
-                {!coupon.used && isExpired(coupon) && (
+                {!userCoupon.isUsed && isExpired(userCoupon) && (
                   <div style={styles.expiredBadge}>기간 만료</div>
                 )}
               </div>
@@ -285,10 +283,11 @@ const styles = {
     color: 'white',
     borderRadius: '12px',
   },
-  couponDescription: {
+  couponCode: {
     fontSize: '14px',
-    color: '#666',
+    color: '#999',
     marginBottom: '15px',
+    fontFamily: 'monospace',
   },
   couponInfo: {
     display: 'flex',
