@@ -119,19 +119,25 @@ public class ProductService {
         Sort sort = createSort(searchRequest);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        // 검색 조건 설정
-        Specification<Product> spec = Specification.where(null);
+        // 검색 조건 설정 (deprecated Specification.where() 대신 null 체크 방식 사용)
+        Specification<Product> spec = null;
 
         if (searchRequest.getKeyword() != null && !searchRequest.getKeyword().isBlank()) {
-            spec = spec.and(ProductSpecification.hasKeyword(searchRequest.getKeyword()));
+            spec = ProductSpecification.hasKeyword(searchRequest.getKeyword());
         }
 
         if (searchRequest.getCategoryId() != null) {
-            spec = spec.and(ProductSpecification.hasCategoryId(searchRequest.getCategoryId()));
+            Specification<Product> categorySpec = ProductSpecification.hasCategoryId(searchRequest.getCategoryId());
+            spec = spec == null ? categorySpec : spec.and(categorySpec);
         }
 
         // 상품 조회
-        Page<Product> products = productRepository.findAll(spec, pageable);
+        Page<Product> products;
+        if (spec != null) {
+            products = productRepository.findAll(spec, pageable);
+        } else {
+            products = productRepository.findAll(pageable);
+        }
 
         return products.map(ProductResponse::from);
     }
@@ -229,8 +235,6 @@ public class ProductService {
 
     /**
      * 재고 업데이트
-     *
-     * ⚠️ 주의: StockUpdateRequest는 quantity 필드를 사용합니다!
      */
     @Transactional
     public ProductResponse updateStock(String email, Long productId, StockUpdateRequest request) {
