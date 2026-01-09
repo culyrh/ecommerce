@@ -1,5 +1,6 @@
 package ecommerce.domain.cart.service;
 
+import ecommerce.common.exception.ErrorCode;
 import ecommerce.common.exception.ResourceNotFoundException;
 import ecommerce.common.exception.UnprocessableEntityException;
 import ecommerce.domain.cart.dto.AddToCartRequest;
