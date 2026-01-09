@@ -229,11 +229,13 @@ public class ProductService {
 
     /**
      * 재고 업데이트
+     *
+     * ⚠️ 주의: StockUpdateRequest는 quantity 필드를 사용합니다!
      */
     @Transactional
     public ProductResponse updateStock(String email, Long productId, StockUpdateRequest request) {
         log.info("재고 업데이트: email={}, productId={}, newStock={}",
-                email, productId, request.getStock());
+                email, productId, request.getQuantity());
 
         // 사용자 조회
         User user = userRepository.findByEmail(email)
@@ -250,11 +252,11 @@ public class ProductService {
         }
 
         // 재고 업데이트
-        product.setStock(request.getStock());
-        product.setStatus(request.getStock() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
+        product.setStock(request.getQuantity());
+        product.setStatus(request.getQuantity() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
 
         Product updatedProduct = productRepository.save(product);
-        log.info("재고 업데이트 완료: productId={}, newStock={}", productId, request.getStock());
+        log.info("재고 업데이트 완료: productId={}, newStock={}", productId, request.getQuantity());
 
         return ProductResponse.from(updatedProduct);
     }
