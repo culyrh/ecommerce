@@ -59,7 +59,7 @@ function ProductDetailPage() {
     try {
       // 백엔드에 재입고 투표 수를 가져오는 API가 있다면 사용
       // 현재는 투표 목록의 totalElements를 사용
-      const response = await fetch(`http://3.27.248.26:8080/api/restock-votes/products/${id}?page=0&size=1`);
+      const response = await fetch(`http://54.206.243.31:8080/api/restock-votes/products/${id}?page=0&size=1`);
       if (response.ok) {
         const data = await response.json();
         setRestockVoteCount(data.totalElements || 0);
