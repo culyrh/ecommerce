@@ -8,6 +8,7 @@ function ProductDetailPage() {
   
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [restockVoteCount, setRestockVoteCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -16,6 +17,7 @@ function ProductDetailPage() {
   useEffect(() => {
     loadProduct();
     loadReviews();
+    loadRestockVoteCount();
     checkUser();
   }, [id]);
 
@@ -47,9 +49,46 @@ function ProductDetailPage() {
   const loadReviews = async () => {
     try {
       const data = await apiService.getProductReviews(id, 0, 5);
-      setReviews(data.content);
+      setReviews(data.content || []);
     } catch (err) {
       console.error('리뷰 로딩 실패:', err);
+    }
+  };
+
+  const loadRestockVoteCount = async () => {
+    try {
+      // 백엔드에 재입고 투표 수를 가져오는 API가 있다면 사용
+      // 현재는 투표 목록의 totalElements를 사용
+      const response = await fetch(`http://3.27.248.26:8080/api/restock-votes/products/${id}?page=0&size=1`);
+      if (response.ok) {
+        const data = await response.json();
+        setRestockVoteCount(data.totalElements || 0);
+      }
+    } catch (err) {
+      console.error('재입고 투표 수 로딩 실패:', err);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    if (product.stock < quantity) {
+      alert('재고가 부족합니다.');
+      return;
+    }
+
+    try {
+      await apiService.addToCart(product.id, quantity);
+      
+      if (window.confirm('장바구니에 추가되었습니다. 장바구니로 이동하시겠습니까?')) {
+        navigate('/cart');
+      }
+    } catch (err) {
+      alert('장바구니 추가 실패: ' + err.message);
     }
   };
 
@@ -65,7 +104,6 @@ function ProductDetailPage() {
       return;
     }
 
-    // 주문 페이지로 이동 (상품 정보 전달)
     navigate('/orders/create', {
       state: {
         items: [{
@@ -86,6 +124,7 @@ function ProductDetailPage() {
     try {
       await apiService.voteRestock(product.id);
       alert('재입고 투표가 완료되었습니다!');
+      loadRestockVoteCount(); // 투표 수 새로고침
     } catch (err) {
       if (err.code === 'DUPLICATE_VOTE') {
         alert('이미 투표하셨습니다.');
@@ -114,6 +153,16 @@ function ProductDetailPage() {
     return new Intl.NumberFormat('ko-KR').format(price) + '원';
   };
 
+  const getStatusBadge = (status) => {
+    if (status === 'ACTIVE') {
+      return <span style={styles.statusBadgeActive}>판매중</span>;
+    } else if (status === 'OUT_OF_STOCK') {
+      return <span style={styles.statusBadgeOutOfStock}>품절</span>;
+    } else {
+      return <span style={styles.statusBadgeInactive}>판매중지</span>;
+    }
+  };
+
   if (loading) {
     return <div style={styles.loading}>로딩 중...</div>;
   }
@@ -122,133 +171,145 @@ function ProductDetailPage() {
     return (
       <div style={styles.container}>
         <div style={styles.error}>{error}</div>
-        <button onClick={() => navigate('/products')} style={styles.backButton}>
-          목록으로
-        </button>
       </div>
     );
   }
 
   if (!product) {
-    return <div style={styles.loading}>상품을 찾을 수 없습니다.</div>;
+    return (
+      <div style={styles.container}>
+        <div style={styles.error}>상품을 찾을 수 없습니다.</div>
+      </div>
+    );
   }
 
   return (
     <div style={styles.container}>
-      <button onClick={() => navigate('/products')} style={styles.backButton}>
-        ← 목록으로
-      </button>
-
       <div style={styles.productSection}>
-        {/* 상품 이미지 */}
         <div style={styles.imageSection}>
           {product.imageUrl ? (
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              style={styles.productImage}
-            />
+            <img src={product.imageUrl} alt={product.name} style={styles.productImage} />
           ) : (
             <div style={styles.noImage}>이미지 없음</div>
           )}
         </div>
 
-        {/* 상품 정보 */}
         <div style={styles.infoSection}>
-          <h1 style={styles.productName}>{product.name}</h1>
-          
+          <div style={styles.header}>
+            <h1 style={styles.productName}>{product.name}</h1>
+            {getStatusBadge(product.status)}
+          </div>
+
+          {/* 판매자 정보 */}
+          {product.seller && (
+            <div style={styles.sellerInfo}>
+              <span style={styles.sellerLabel}>판매자:</span>
+              <span style={styles.sellerName}>{product.seller.businessName}</span>
+            </div>
+          )}
+
+          {/* 카테고리 */}
           {product.category && (
-            <div style={styles.category}>{product.category.name}</div>
+            <div style={styles.categoryInfo}>
+              <span style={styles.categoryLabel}>카테고리:</span>
+              <span style={styles.categoryName}>{product.category.name}</span>
+            </div>
           )}
 
           <div style={styles.priceSection}>
             <span style={styles.price}>{formatPrice(product.price)}</span>
           </div>
 
-          <div style={styles.metaInfo}>
-            <div style={styles.metaItem}>
-              <span style={styles.metaLabel}>상태:</span>
-              <span style={{
-                ...styles.badge,
-                backgroundColor: product.status === 'ACTIVE' ? '#28a745' : '#dc3545'
-              }}>
-                {product.status === 'ACTIVE' ? '판매중' : '품절'}
-              </span>
-            </div>
-            
-            <div style={styles.metaItem}>
-              <span style={styles.metaLabel}>재고:</span>
-              <span style={styles.metaValue}>{product.stock}개</span>
-            </div>
-            
-            {product.salesCount > 0 && (
-              <div style={styles.metaItem}>
-                <span style={styles.metaLabel}>판매량:</span>
-                <span style={styles.metaValue}>{product.salesCount}개</span>
-              </div>
-            )}
+          <div style={styles.stockInfo}>
+            <span style={styles.stockLabel}>재고:</span>
+            <span style={styles.stockValue}>
+              {product.stock > 0 ? `${product.stock}개` : '품절'}
+            </span>
           </div>
 
-          {product.description && (
-            <div style={styles.description}>
-              <h3 style={styles.descTitle}>상품 설명</h3>
-              <p style={styles.descText}>{product.description}</p>
+          {/* 재입고 투표 정보 */}
+          {product.status === 'OUT_OF_STOCK' && (
+            <div style={styles.restockSection}>
+              <div style={styles.restockInfo}>
+                <span style={styles.restockLabel}>재입고 요청:</span>
+                <span style={styles.restockCount}>{restockVoteCount}명이 원해요</span>
+              </div>
+              <div style={styles.restockButtons}>
+                <button onClick={handleRestockVote} style={styles.restockVoteButton}>
+                  재입고 투표하기
+                </button>
+                <button onClick={handleRestockNotification} style={styles.restockNotifyButton}>
+                  재입고 알림 신청
+                </button>
+              </div>
             </div>
           )}
 
-          {/* 주문 섹션 */}
-          {product.status === 'ACTIVE' && product.stock > 0 ? (
-            <div style={styles.orderSection}>
+          {product.stock > 0 && (
+            <>
               <div style={styles.quantitySection}>
-                <label style={styles.quantityLabel}>수량:</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={product.stock}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  style={styles.quantityInput}
-                />
+                <span style={styles.quantityLabel}>수량:</span>
+                <div style={styles.quantityControl}>
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    style={styles.quantityButton}
+                  >
+                    -
+                  </button>
+                  <span style={styles.quantityValue}>{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    style={styles.quantityButton}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-              
-              <button onClick={handleOrder} style={styles.orderButton}>
-                주문하기
-              </button>
-            </div>
-          ) : (
-            <div style={styles.outOfStock}>
-              <p style={styles.outOfStockText}>현재 품절된 상품입니다</p>
-              <div style={styles.restockButtons}>
-                <button onClick={handleRestockVote} style={styles.restockButton}>
-                  재입고 투표하기
+
+              <div style={styles.totalSection}>
+                <span style={styles.totalLabel}>총 금액:</span>
+                <span style={styles.totalPrice}>
+                  {formatPrice(product.price * quantity)}
+                </span>
+              </div>
+
+              <div style={styles.buttonGroup}>
+                <button onClick={handleAddToCart} style={styles.cartButton}>
+                  🛒 장바구니
                 </button>
-                <button onClick={handleRestockNotification} style={styles.restockButton}>
-                  재입고 알림 받기
+                <button onClick={handleOrder} style={styles.buyButton}>
+                  바로 구매
                 </button>
               </div>
-            </div>
+            </>
           )}
+
+          <div style={styles.description}>
+            <h3 style={styles.descriptionTitle}>상품 설명</h3>
+            <p style={styles.descriptionText}>{product.description}</p>
+          </div>
         </div>
       </div>
 
       {/* 리뷰 섹션 */}
       <div style={styles.reviewSection}>
-        <h2 style={styles.reviewTitle}>상품 리뷰 ({reviews.length})</h2>
-        
+        <h2 style={styles.reviewTitle}>상품 리뷰</h2>
         {reviews.length === 0 ? (
           <div style={styles.noReviews}>아직 리뷰가 없습니다.</div>
         ) : (
           <div style={styles.reviewList}>
-            {reviews.map(review => (
+            {reviews.map((review) => (
               <div key={review.id} style={styles.reviewCard}>
                 <div style={styles.reviewHeader}>
-                  <span style={styles.reviewUser}>{review.user.name}</span>
-                  <span style={styles.reviewRating}>⭐ {review.rating}</span>
+                  <div style={styles.reviewRating}>
+                    {'⭐'.repeat(review.rating)}
+                  </div>
+                  <div style={styles.reviewDate}>
+                    {new Date(review.createdAt).toLocaleDateString()}
+                  </div>
                 </div>
-                <p style={styles.reviewContent}>{review.content}</p>
-                <span style={styles.reviewDate}>
-                  {new Date(review.createdAt).toLocaleDateString()}
-                </span>
+                <div style={styles.reviewAuthor}>{review.userName}</div>
+                <div style={styles.reviewComment}>{review.comment}</div>
               </div>
             ))}
           </div>
@@ -277,39 +338,36 @@ const styles = {
     borderRadius: '6px',
     marginBottom: '20px',
   },
-  backButton: {
-    padding: '10px 20px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    color: '#007bff',
-    backgroundColor: 'white',
-    border: '1px solid #007bff',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    marginBottom: '20px',
-  },
   productSection: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '40px',
     marginBottom: '40px',
+    backgroundColor: 'white',
+    padding: '30px',
+    borderRadius: '8px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
   },
   imageSection: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: '8px',
-    overflow: 'hidden',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   productImage: {
     width: '100%',
-    height: '500px',
+    maxWidth: '500px',
+    height: 'auto',
+    borderRadius: '8px',
     objectFit: 'cover',
   },
   noImage: {
     width: '100%',
-    height: '500px',
+    height: '400px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: '8px',
     color: '#999',
     fontSize: '18px',
   },
@@ -318,100 +376,198 @@ const styles = {
     flexDirection: 'column',
     gap: '20px',
   },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+  },
   productName: {
     fontSize: '28px',
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: '10px',
+    margin: 0,
   },
-  category: {
-    display: 'inline-block',
+  statusBadgeActive: {
     padding: '6px 12px',
-    backgroundColor: '#e9ecef',
-    color: '#666',
+    backgroundColor: '#28a745',
+    color: 'white',
     borderRadius: '4px',
     fontSize: '14px',
+    fontWeight: 'bold',
+  },
+  statusBadgeOutOfStock: {
+    padding: '6px 12px',
+    backgroundColor: '#dc3545',
+    color: 'white',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+  },
+  statusBadgeInactive: {
+    padding: '6px 12px',
+    backgroundColor: '#6c757d',
+    color: 'white',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+  },
+  sellerInfo: {
+    display: 'flex',
+    gap: '10px',
+    padding: '10px 0',
+    borderBottom: '1px solid #e9ecef',
+  },
+  sellerLabel: {
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  sellerName: {
+    color: '#333',
+  },
+  categoryInfo: {
+    display: 'flex',
+    gap: '10px',
+    padding: '10px 0',
+    borderBottom: '1px solid #e9ecef',
+  },
+  categoryLabel: {
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  categoryName: {
+    color: '#333',
   },
   priceSection: {
-    padding: '20px 0',
-    borderTop: '2px solid #e9ecef',
-    borderBottom: '2px solid #e9ecef',
+    padding: '15px 0',
+    borderBottom: '1px solid #e9ecef',
   },
   price: {
     fontSize: '32px',
     fontWeight: 'bold',
     color: '#007bff',
   },
-  metaInfo: {
+  stockInfo: {
     display: 'flex',
-    flexDirection: 'column',
     gap: '10px',
-  },
-  metaItem: {
-    display: 'flex',
     alignItems: 'center',
+  },
+  stockLabel: {
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  stockValue: {
+    color: '#333',
+    fontSize: '16px',
+  },
+  restockSection: {
+    backgroundColor: '#fff3cd',
+    padding: '15px',
+    borderRadius: '6px',
+    border: '1px solid #ffc107',
+  },
+  restockInfo: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '10px',
+  },
+  restockLabel: {
+    fontWeight: 'bold',
+    color: '#856404',
+  },
+  restockCount: {
+    color: '#856404',
+  },
+  restockButtons: {
+    display: 'flex',
     gap: '10px',
   },
-  metaLabel: {
+  restockVoteButton: {
+    flex: 1,
+    padding: '10px',
     fontSize: '14px',
-    color: '#666',
     fontWeight: 'bold',
+    color: '#856404',
+    backgroundColor: 'white',
+    border: '1px solid #ffc107',
+    borderRadius: '6px',
+    cursor: 'pointer',
   },
-  metaValue: {
-    fontSize: '16px',
-    color: '#333',
-  },
-  badge: {
-    padding: '4px 12px',
+  restockNotifyButton: {
+    flex: 1,
+    padding: '10px',
     fontSize: '14px',
     fontWeight: 'bold',
     color: 'white',
-    borderRadius: '4px',
-  },
-  description: {
-    padding: '20px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '8px',
-  },
-  descTitle: {
-    fontSize: '18px',
-    fontWeight: 'bold',
-    marginBottom: '10px',
-    color: '#333',
-  },
-  descText: {
-    fontSize: '16px',
-    lineHeight: '1.6',
-    color: '#666',
-  },
-  orderSection: {
-    padding: '20px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '8px',
+    backgroundColor: '#ffc107',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
   },
   quantitySection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    marginBottom: '15px',
+    gap: '15px',
   },
   quantityLabel: {
-    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  quantityControl: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  quantityButton: {
+    width: '40px',
+    height: '40px',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    backgroundColor: 'white',
+    border: '1px solid #ddd',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  quantityValue: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    minWidth: '40px',
+    textAlign: 'center',
+  },
+  totalSection: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '15px 0',
+    borderTop: '2px solid #e9ecef',
+  },
+  totalLabel: {
+    fontSize: '18px',
     fontWeight: 'bold',
     color: '#333',
   },
-  quantityInput: {
-    width: '80px',
-    padding: '8px',
-    fontSize: '16px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    textAlign: 'center',
+  totalPrice: {
+    fontSize: '24px',
+    fontWeight: 'bold',
+    color: '#007bff',
   },
-  orderButton: {
-    width: '100%',
+  buttonGroup: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 2fr',
+    gap: '10px',
+  },
+  cartButton: {
     padding: '15px',
-    fontSize: '18px',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#007bff',
+    backgroundColor: 'white',
+    border: '2px solid #007bff',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  buyButton: {
+    padding: '15px',
+    fontSize: '16px',
     fontWeight: 'bold',
     color: 'white',
     backgroundColor: '#007bff',
@@ -419,35 +575,28 @@ const styles = {
     borderRadius: '6px',
     cursor: 'pointer',
   },
-  outOfStock: {
+  description: {
+    marginTop: '20px',
     padding: '20px',
     backgroundColor: '#f8f9fa',
-    borderRadius: '8px',
-    textAlign: 'center',
-  },
-  outOfStockText: {
-    fontSize: '16px',
-    color: '#dc3545',
-    marginBottom: '15px',
-    fontWeight: 'bold',
-  },
-  restockButtons: {
-    display: 'flex',
-    gap: '10px',
-  },
-  restockButton: {
-    flex: 1,
-    padding: '12px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    color: 'white',
-    backgroundColor: '#28a745',
-    border: 'none',
     borderRadius: '6px',
-    cursor: 'pointer',
+  },
+  descriptionTitle: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    marginBottom: '10px',
+    color: '#333',
+  },
+  descriptionText: {
+    fontSize: '16px',
+    lineHeight: '1.6',
+    color: '#666',
   },
   reviewSection: {
-    marginTop: '60px',
+    backgroundColor: 'white',
+    padding: '30px',
+    borderRadius: '8px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
   },
   reviewTitle: {
     fontSize: '24px',
@@ -468,9 +617,8 @@ const styles = {
   },
   reviewCard: {
     padding: '20px',
-    backgroundColor: 'white',
-    border: '1px solid #e9ecef',
-    borderRadius: '8px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '6px',
   },
   reviewHeader: {
     display: 'flex',
@@ -478,24 +626,23 @@ const styles = {
     alignItems: 'center',
     marginBottom: '10px',
   },
-  reviewUser: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#333',
-  },
   reviewRating: {
-    fontSize: '14px',
-    color: '#ffc107',
-  },
-  reviewContent: {
-    fontSize: '14px',
-    lineHeight: '1.6',
-    color: '#666',
-    marginBottom: '10px',
+    fontSize: '18px',
   },
   reviewDate: {
-    fontSize: '12px',
+    fontSize: '14px',
     color: '#999',
+  },
+  reviewAuthor: {
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: '8px',
+  },
+  reviewComment: {
+    fontSize: '16px',
+    color: '#333',
+    lineHeight: '1.5',
   },
 };
 

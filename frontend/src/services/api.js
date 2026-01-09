@@ -321,7 +321,7 @@ class ApiService {
 
   async getMyRestockVotes(page = 0, size = 20) {
     const response = await fetch(
-      `${API_BASE_URL}/restock-votes/me?page=${page}&size=${size}`,
+      `${API_BASE_URL}/restock-votes/my?page=${page}&size=${size}`,
       {
         method: 'GET',
         headers: this.getHeaders(true),
@@ -341,7 +341,7 @@ class ApiService {
 
   async getMyRestockNotifications(page = 0, size = 20) {
     const response = await fetch(
-      `${API_BASE_URL}/restock-notifications/me?page=${page}&size=${size}`,
+      `${API_BASE_URL}/restock-notifications/my?page=${page}&size=${size}`,
       {
         method: 'GET',
         headers: this.getHeaders(true),
