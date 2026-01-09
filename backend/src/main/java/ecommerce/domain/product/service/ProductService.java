@@ -70,10 +70,10 @@ public class ProductService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .price(request.getPrice())
-                .stock(request.getQuantity())
+                .stock(request.getStock())
                 .imageUrl(request.getImageUrl())
                 .naverProductId(request.getNaverProductId())
-                .status(request.getQuantity() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK)
+                .status(request.getStock() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK)
                 .build();
 
         Product savedProduct = productRepository.save(product);
@@ -187,10 +187,10 @@ public class ProductService {
         if (request.getPrice() != null) {
             product.setPrice(request.getPrice());
         }
-        if (request.getQuantity() != null) {
-            product.setStock(request.getQuantity());
+        if (request.getStock() != null) {
+            product.setStock(request.getStock());
             // 재고에 따라 상태 업데이트
-            product.setStatus(request.getQuantity() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
+            product.setStatus(request.getStock() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
         }
         if (request.getImageUrl() != null) {
             product.setImageUrl(request.getImageUrl());
@@ -233,7 +233,7 @@ public class ProductService {
     @Transactional
     public ProductResponse updateStock(String email, Long productId, StockUpdateRequest request) {
         log.info("재고 업데이트: email={}, productId={}, newStock={}",
-                email, productId, request.getQuantity());
+                email, productId, request.getStock());
 
         // 사용자 조회
         User user = userRepository.findByEmail(email)
@@ -250,11 +250,11 @@ public class ProductService {
         }
 
         // 재고 업데이트
-        product.setStock(request.getQuantity());
-        product.setStatus(request.getQuantity() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
+        product.setStock(request.getStock());
+        product.setStatus(request.getStock() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
 
         Product updatedProduct = productRepository.save(product);
-        log.info("재고 업데이트 완료: productId={}, newStock={}", productId, request.getQuantity());
+        log.info("재고 업데이트 완료: productId={}, newStock={}", productId, request.getStock());
 
         return ProductResponse.from(updatedProduct);
     }
