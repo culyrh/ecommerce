@@ -5,6 +5,7 @@ import apiService from '../services/api';
 function CartPage() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,60 +15,52 @@ function CartPage() {
   const loadCartItems = async () => {
     try {
       setLoading(true);
-      // 로컬스토리지에서 장바구니 정보 가져오기
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-      
-      // 각 상품의 최신 정보 가져오기
-      const itemsWithDetails = await Promise.all(
-        cart.map(async (item) => {
-          try {
-            const product = await apiService.getProduct(item.productId);
-            return {
-              ...item,
-              product,
-            };
-          } catch (err) {
-            console.error(`상품 ${item.productId} 로딩 실패:`, err);
-            return null;
-          }
-        })
-      );
-      
-      setCartItems(itemsWithDetails.filter(item => item !== null));
+      const data = await apiService.getMyCart();
+      setCartItems(data || []);
+      setError('');
     } catch (err) {
       console.error('장바구니 로딩 실패:', err);
+      if (err.status === 401) {
+        navigate('/login');
+      } else {
+        setError('장바구니를 불러올 수 없습니다.');
+        setCartItems([]);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const updateQuantity = (productId, newQuantity) => {
+  const updateQuantity = async (cartItemId, newQuantity) => {
     if (newQuantity < 1) return;
     
-    const updatedItems = cartItems.map(item =>
-      item.productId === productId ? { ...item, quantity: newQuantity } : item
-    );
-    
-    setCartItems(updatedItems);
-    
-    // 로컬스토리지 업데이트
-    const cart = updatedItems.map(({ productId, quantity }) => ({ productId, quantity }));
-    localStorage.setItem('cart', JSON.stringify(cart));
+    try {
+      await apiService.updateCartItem(cartItemId, newQuantity);
+      loadCartItems(); // 새로고침
+    } catch (err) {
+      alert('수량 변경 실패: ' + err.message);
+    }
   };
 
-  const removeItem = (productId) => {
-    const updatedItems = cartItems.filter(item => item.productId !== productId);
-    setCartItems(updatedItems);
-    
-    // 로컬스토리지 업데이트
-    const cart = updatedItems.map(({ productId, quantity }) => ({ productId, quantity }));
-    localStorage.setItem('cart', JSON.stringify(cart));
+  const removeItem = async (cartItemId) => {
+    try {
+      await apiService.removeCartItem(cartItemId);
+      loadCartItems(); // 새로고침
+    } catch (err) {
+      alert('삭제 실패: ' + err.message);
+    }
   };
 
-  const clearCart = () => {
-    if (window.confirm('장바구니를 비우시겠습니까?')) {
+  const clearCart = async () => {
+    if (!window.confirm('장바구니를 비우시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await apiService.clearCart();
       setCartItems([]);
-      localStorage.removeItem('cart');
+    } catch (err) {
+      alert('장바구니 비우기 실패: ' + err.message);
     }
   };
 
@@ -94,7 +87,7 @@ function CartPage() {
 
   const getTotalPrice = () => {
     return cartItems.reduce((sum, item) => {
-      return sum + (item.product.price * item.quantity);
+      return sum + Number(item.subtotal || 0);
     }, 0);
   };
 
@@ -113,6 +106,8 @@ function CartPage() {
         )}
       </div>
 
+      {error && <div style={styles.error}>{error}</div>}
+
       {cartItems.length === 0 ? (
         <div style={styles.empty}>
           <p style={styles.emptyText}>장바구니가 비어있습니다.</p>
@@ -124,10 +119,10 @@ function CartPage() {
         <>
           <div style={styles.itemsList}>
             {cartItems.map(item => (
-              <div key={item.productId} style={styles.cartItem}>
+              <div key={item.id} style={styles.cartItem}>
                 <img
-                  src={item.product.imageUrl || '/placeholder.png'}
-                  alt={item.product.name}
+                  src={item.productImageUrl || '/placeholder.png'}
+                  alt={item.productName}
                   style={styles.itemImage}
                   onClick={() => navigate(`/products/${item.productId}`)}
                 />
@@ -137,22 +132,28 @@ function CartPage() {
                     style={styles.itemName}
                     onClick={() => navigate(`/products/${item.productId}`)}
                   >
-                    {item.product.name}
+                    {item.productName}
                   </h3>
                   <p style={styles.itemPrice}>
-                    {formatPrice(item.product.price)}
+                    {formatPrice(item.productPrice)}
                   </p>
                   
-                  {item.product.stock < item.quantity && (
+                  {item.productStock < item.quantity && (
                     <p style={styles.stockWarning}>
-                      ⚠️ 재고가 부족합니다 (현재 재고: {item.product.stock}개)
+                      ⚠️ 재고가 부족합니다 (현재 재고: {item.productStock}개)
+                    </p>
+                  )}
+
+                  {item.productStatus !== 'ACTIVE' && (
+                    <p style={styles.stockWarning}>
+                      ⚠️ 품절된 상품입니다
                     </p>
                   )}
                 </div>
 
                 <div style={styles.quantityControl}>
                   <button
-                    onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
                     style={styles.quantityButton}
                     disabled={item.quantity <= 1}
                   >
@@ -160,9 +161,9 @@ function CartPage() {
                   </button>
                   <span style={styles.quantity}>{item.quantity}</span>
                   <button
-                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     style={styles.quantityButton}
-                    disabled={item.quantity >= item.product.stock}
+                    disabled={item.quantity >= item.productStock}
                   >
                     +
                   </button>
@@ -170,10 +171,10 @@ function CartPage() {
 
                 <div style={styles.itemTotal}>
                   <p style={styles.totalPrice}>
-                    {formatPrice(item.product.price * item.quantity)}
+                    {formatPrice(item.subtotal)}
                   </p>
                   <button
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => removeItem(item.id)}
                     style={styles.removeButton}
                   >
                     삭제
@@ -238,6 +239,13 @@ const styles = {
     padding: '40px',
     fontSize: '18px',
     color: '#666',
+  },
+  error: {
+    padding: '15px',
+    backgroundColor: '#fee',
+    color: '#c33',
+    borderRadius: '6px',
+    marginBottom: '20px',
   },
   empty: {
     textAlign: 'center',
