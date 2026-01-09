@@ -122,7 +122,7 @@ public class RestockVoteService {
         // 관리자용 더미 사용자 조회 또는 생성 (admin@system.com)
         // 또는 user를 null로 허용하도록 Notification 엔티티 수정 필요
         // 현재는 임시로 첫 번째 관리자 사용자를 조회
-        User adminUser = userRepository.findFirstByRole(Role.ROLE_ADMIN)
+        User adminUser = userRepository.findFirstByRolesContaining(Role.ROLE_ADMIN)
                 .orElse(null);
 
         if (adminUser == null) {
