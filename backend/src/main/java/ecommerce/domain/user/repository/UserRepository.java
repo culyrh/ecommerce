@@ -1,5 +1,6 @@
 package ecommerce.domain.user.repository;
 
+import ecommerce.common.enums.Role;
 import ecommerce.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,4 +15,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     Optional<User> findByProviderAndProviderId(String provider, String providerId);
+
+    Optional<User> findFirstByRolesContaining(Role role);
 }
