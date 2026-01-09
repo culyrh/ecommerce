@@ -55,9 +55,9 @@ function RestockPage() {
             <div style={styles.cardContent}>
               <h3 
                 style={styles.productName}
-                onClick={() => navigate(`/products/${notification.productId}`)}
+                onClick={() => navigate(`/products/${notification.product?.id}`)}
               >
-                {notification.productName}
+                {notification.product?.name || '상품명 없음'}
               </h3>
               
               <div style={styles.info}>
@@ -67,14 +67,9 @@ function RestockPage() {
                 </span>
               </div>
 
-              {notification.notified ? (
+              {notification.isNotified ? (
                 <div style={styles.statusBadge}>
                   <span style={styles.statusNotified}>✅ 알림 발송됨</span>
-                  {notification.notifiedAt && (
-                    <span style={styles.statusDate}>
-                      ({formatDate(notification.notifiedAt)})
-                    </span>
-                  )}
                 </div>
               ) : (
                 <div style={styles.statusBadge}>
@@ -84,7 +79,7 @@ function RestockPage() {
             </div>
 
             <button
-              onClick={() => navigate(`/products/${notification.productId}`)}
+              onClick={() => navigate(`/products/${notification.product?.id}`)}
               style={styles.viewButton}
             >
               상품 보기
@@ -115,13 +110,10 @@ function RestockPage() {
               <div style={styles.cardHeader}>
                 <h3 
                   style={styles.productName}
-                  onClick={() => navigate(`/products/${vote.productId}`)}
+                  onClick={() => navigate(`/products/${vote.product?.id}`)}
                 >
-                  {vote.productName}
+                  {vote.product?.name || '상품명 없음'}
                 </h3>
-                <span style={styles.voteCount}>
-                  🗳️ {vote.voteCount || 0}표
-                </span>
               </div>
               
               <div style={styles.info}>
@@ -132,12 +124,12 @@ function RestockPage() {
               </div>
 
               <p style={styles.voteDescription}>
-                이 상품의 재입고를 원하는 사용자가 {vote.voteCount || 0}명 입니다.
+                재입고 투표에 참여하셨습니다.
               </p>
             </div>
 
             <button
-              onClick={() => navigate(`/products/${vote.productId}`)}
+              onClick={() => navigate(`/products/${vote.product?.id}`)}
               style={styles.viewButton}
             >
               상품 보기
