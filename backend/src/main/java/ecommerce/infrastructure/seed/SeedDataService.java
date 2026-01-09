@@ -120,7 +120,6 @@ public class SeedDataService {
                     .birthDate(LocalDate.parse(dto.getBirthDate()))
                     .isActive(dto.getIsActive())
                     .build();
-                    .build();
             user.addRole(Role.valueOf(dto.getRole()));
 
             users.add(userRepository.save(user));
