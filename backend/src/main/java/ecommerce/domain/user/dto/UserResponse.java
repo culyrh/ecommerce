@@ -9,6 +9,7 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Getter
 @AllArgsConstructor
@@ -20,7 +21,7 @@ public class UserResponse {
     private String name;
     private String phone;
     private LocalDate birthDate;
-    private Role role;
+    private Set<Role> roles;  // Role -> Set<Role>
     private String provider;
     private BigDecimal totalPurchaseAmount;
     private Boolean isActive;
@@ -34,7 +35,7 @@ public class UserResponse {
                 .name(user.getName())
                 .phone(user.getPhone())
                 .birthDate(user.getBirthDate())
-                .role(user.getRole())
+                .roles(user.getRoles())  // getRole() -> getRoles()
                 .provider(user.getProvider())
                 .totalPurchaseAmount(user.getTotalPurchaseAmount())
                 .isActive(user.getIsActive())

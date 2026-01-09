@@ -181,7 +181,7 @@ public class ProductController {
             @PathVariable Long id,
             @Valid @RequestBody StockUpdateRequest request
     ) {
-        log.info("PUT /api/products/{}/stock - email: {}, stock: {}", id, email, request.getStock());
+        log.info("PUT /api/products/{}/stock - email: {}, stock: {}", id, email, request.getQuantity());
         ProductResponse response = productService.updateStock(email, id, request);
         return ResponseEntity.ok(response);
     }

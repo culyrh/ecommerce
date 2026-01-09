@@ -118,9 +118,10 @@ public class SeedDataService {
                     .name(dto.getName())
                     .phone(dto.getPhone())
                     .birthDate(LocalDate.parse(dto.getBirthDate()))
-                    .role(Role.valueOf(dto.getRole()))
                     .isActive(dto.getIsActive())
                     .build();
+                    .build();
+            user.addRole(Role.valueOf(dto.getRole()));
 
             users.add(userRepository.save(user));
         }

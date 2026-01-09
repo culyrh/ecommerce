@@ -10,6 +10,30 @@ import java.util.List;
 
 public class ProductSpecification {
 
+    public static Specification<Product> hasKeyword(String keyword) {
+        return (root, query, criteriaBuilder) -> {
+            if (keyword == null || keyword.trim().isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.like(
+                    criteriaBuilder.lower(root.get("name")),
+                    "%" + keyword.toLowerCase() + "%"
+            );
+        };
+    }
+
+    public static Specification<Product> hasCategoryId(Long categoryId) {
+        return (root, query, criteriaBuilder) -> {
+            if (categoryId == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(
+                    root.get("category").get("id"),
+                    categoryId
+            );
+        };
+    }
+
     public static Specification<Product> searchProducts(ProductSearchRequest searchRequest) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

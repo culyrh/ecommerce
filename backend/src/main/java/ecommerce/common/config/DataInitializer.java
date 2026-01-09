@@ -51,9 +51,11 @@ public class DataInitializer {
                 .password(passwordEncoder.encode(adminPassword))
                 .name("관리자")
                 .phone("010-0000-0000")
-                .role(Role.ROLE_ADMIN)
                 .isActive(true)
                 .build();
+
+        // ADMIN 역할 추가
+        admin.addRole(Role.ROLE_ADMIN);
 
         userRepository.save(admin);
 
