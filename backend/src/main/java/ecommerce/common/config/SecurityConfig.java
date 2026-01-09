@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        // 재입고 투표 조회 public
+                        .requestMatchers(HttpMethod.GET, "/api/restock-votes/products/**").permitAll()
 
                         // ADMIN 전용 경로
                         .requestMatchers("/api/users").hasRole("ADMIN")
@@ -61,17 +63,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/notifications").hasRole("ADMIN")
                         .requestMatchers("/internal/seed").hasRole("ADMIN")
 
-                        // SELLER 전용 경로
-                        .requestMatchers(HttpMethod.POST, "/api/sellers").hasAnyRole("SELLER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole( "SELLER", "ADMIN")
+                        // SELLER 관련 경로
+                        .requestMatchers(HttpMethod.POST, "/api/sellers").hasAnyRole("USER", "SELLER", "ADMIN")
+                        .requestMatchers("/api/sellers/**").hasAnyRole("SELLER", "ADMIN")
+
+                        // PRODUCT 관련
+                        .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("SELLER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("SELLER", "ADMIN")
-                        .requestMatchers("/api/sellers/**").hasAnyRole("SELLER", "ADMIN")
 
                         // USER 전용 경로
                         .requestMatchers("/api/users/me/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/orders/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/reviews/**").hasAnyRole("USER", "SELLER", "ADMIN")
+                        .requestMatchers("/api/cart/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/restock-votes/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/restock-notifications/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/api/user-coupons/**").hasAnyRole("USER", "SELLER", "ADMIN")
