@@ -28,7 +28,7 @@ function ProductDetailPage() {
         const userData = await apiService.getCurrentUser();
         setUser(userData);
       } catch (err) {
-        console.error('ì‚¬ìš©ìž ì •ë³´ ë¡œë”© ì‹¤íŒ¨:', err);
+        console.error('사용자 정보 로딩 실패:', err);
       }
     }
   };
@@ -40,7 +40,7 @@ function ProductDetailPage() {
       setProduct(data);
       setError('');
     } catch (err) {
-      setError('ìƒí’ˆì„ ë¶ˆëŸ¬ì˜¤ëŠ”ë° ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤: ' + err.message);
+      setError('상품을 불러오는데 실패했습니다: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -51,56 +51,56 @@ function ProductDetailPage() {
       const data = await apiService.getProductReviews(id, 0, 5);
       setReviews(data.content || []);
     } catch (err) {
-      console.error('ë¦¬ë·° ë¡œë”© ì‹¤íŒ¨:', err);
+      console.error('리뷰 로딩 실패:', err);
     }
   };
 
   const loadRestockVoteCount = async () => {
     try {
-      // ë°±ì—”ë“œì— ìž¬ìž…ê³  íˆ¬í‘œ ìˆ˜ë¥¼ ê°€ì ¸ì˜¤ëŠ” APIê°€ ìžˆë‹¤ë©´ ì‚¬ìš©
-      // í˜„ìž¬ëŠ” íˆ¬í‘œ ëª©ë¡ì˜ totalElementsë¥¼ ì‚¬ìš©
+      // 백엔드에 재입고 투표 수를 가져오는 API가 있다면 사용
+      // 현재는 투표 목록의 totalElements를 사용
       const response = await fetch(`http://54.206.243.31:8080/api/restock-votes/products/${id}?page=0&size=1`);
       if (response.ok) {
         const data = await response.json();
         setRestockVoteCount(data.totalElements || 0);
       }
     } catch (err) {
-      console.error('ìž¬ìž…ê³  íˆ¬í‘œ ìˆ˜ ë¡œë”© ì‹¤íŒ¨:', err);
+      console.error('재입고 투표 수 로딩 실패:', err);
     }
   };
 
   const handleAddToCart = async () => {
     if (!user) {
-      alert('ë¡œê·¸ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.');
+      alert('로그인이 필요합니다.');
       navigate('/login');
       return;
     }
 
     if (product.stock < quantity) {
-      alert('ìž¬ê³ ê°€ ë¶€ì¡±í•©ë‹ˆë‹¤.');
+      alert('재고가 부족합니다.');
       return;
     }
 
     try {
       await apiService.addToCart(product.id, quantity);
       
-      if (window.confirm('ìž¥ë°”êµ¬ë‹ˆì— ì¶”ê°€ë˜ì—ˆìŠµë‹ˆë‹¤. ìž¥ë°”êµ¬ë‹ˆë¡œ ì´ë™í•˜ì‹œê² ìŠµë‹ˆê¹Œ?')) {
+      if (window.confirm('장바구니에 추가되었습니다. 장바구니로 이동하시겠습니까?')) {
         navigate('/cart');
       }
     } catch (err) {
-      alert('ìž¥ë°”êµ¬ë‹ˆ ì¶”ê°€ ì‹¤íŒ¨: ' + err.message);
+      alert('장바구니 추가 실패: ' + err.message);
     }
   };
 
   const handleOrder = () => {
     if (!user) {
-      alert('ë¡œê·¸ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.');
+      alert('로그인이 필요합니다.');
       navigate('/login');
       return;
     }
 
     if (product.stock < quantity) {
-      alert('ìž¬ê³ ê°€ ë¶€ì¡±í•©ë‹ˆë‹¤.');
+      alert('재고가 부족합니다.');
       return;
     }
 
@@ -116,55 +116,55 @@ function ProductDetailPage() {
 
   const handleRestockVote = async () => {
     if (!user) {
-      alert('ë¡œê·¸ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.');
+      alert('로그인이 필요합니다.');
       navigate('/login');
       return;
     }
 
     try {
       await apiService.voteRestock(product.id);
-      alert('ìž¬ìž…ê³  íˆ¬í‘œê°€ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤!');
-      loadRestockVoteCount(); // íˆ¬í‘œ ìˆ˜ ìƒˆë¡œê³ ì¹¨
+      alert('재입고 투표가 완료되었습니다!');
+      loadRestockVoteCount(); // 투표 수 새로고침
     } catch (err) {
       if (err.code === 'DUPLICATE_VOTE') {
-        alert('ì´ë¯¸ íˆ¬í‘œí•˜ì…¨ìŠµë‹ˆë‹¤.');
+        alert('이미 투표하셨습니다.');
       } else {
-        alert('ìž¬ìž…ê³  íˆ¬í‘œ ì‹¤íŒ¨: ' + err.message);
+        alert('재입고 투표 실패: ' + err.message);
       }
     }
   };
 
   const handleRestockNotification = async () => {
     if (!user) {
-      alert('ë¡œê·¸ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.');
+      alert('로그인이 필요합니다.');
       navigate('/login');
       return;
     }
 
     try {
       await apiService.requestRestockNotification(product.id);
-      alert('ìž¬ìž…ê³  ì•Œë¦¼ ì‹ ì²­ì´ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤!');
+      alert('재입고 알림 신청이 완료되었습니다!');
     } catch (err) {
-      alert('ìž¬ìž…ê³  ì•Œë¦¼ ì‹ ì²­ ì‹¤íŒ¨: ' + err.message);
+      alert('재입고 알림 신청 실패: ' + err.message);
     }
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('ko-KR').format(price) + 'ì›';
+    return new Intl.NumberFormat('ko-KR').format(price) + '원';
   };
 
   const getStatusBadge = (status) => {
     if (status === 'ACTIVE') {
-      return <span style={styles.statusBadgeActive}>íŒë§¤ì¤‘</span>;
+      return <span style={styles.statusBadgeActive}>판매중</span>;
     } else if (status === 'OUT_OF_STOCK') {
-      return <span style={styles.statusBadgeOutOfStock}>í’ˆì ˆ</span>;
+      return <span style={styles.statusBadgeOutOfStock}>품절</span>;
     } else {
-      return <span style={styles.statusBadgeInactive}>íŒë§¤ì¤‘ì§€</span>;
+      return <span style={styles.statusBadgeInactive}>판매중지</span>;
     }
   };
 
   if (loading) {
-    return <div style={styles.loading}>ë¡œë”© ì¤‘...</div>;
+    return <div style={styles.loading}>로딩 중...</div>;
   }
 
   if (error) {
@@ -178,7 +178,7 @@ function ProductDetailPage() {
   if (!product) {
     return (
       <div style={styles.container}>
-        <div style={styles.error}>ìƒí’ˆì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.</div>
+        <div style={styles.error}>상품을 찾을 수 없습니다.</div>
       </div>
     );
   }
@@ -190,7 +190,7 @@ function ProductDetailPage() {
           {product.imageUrl ? (
             <img src={product.imageUrl} alt={product.name} style={styles.productImage} />
           ) : (
-            <div style={styles.noImage}>ì´ë¯¸ì§€ ì—†ìŒ</div>
+            <div style={styles.noImage}>이미지 없음</div>
           )}
         </div>
 
@@ -200,18 +200,18 @@ function ProductDetailPage() {
             {getStatusBadge(product.status)}
           </div>
 
-          {/* íŒë§¤ìž ì •ë³´ */}
+          {/* 판매자 정보 */}
           {product.seller && (
             <div style={styles.sellerInfo}>
-              <span style={styles.sellerLabel}>íŒë§¤ìž:</span>
+              <span style={styles.sellerLabel}>판매자:</span>
               <span style={styles.sellerName}>{product.seller.businessName}</span>
             </div>
           )}
 
-          {/* ì¹´í…Œê³ ë¦¬ */}
+          {/* 카테고리 */}
           {product.category && (
             <div style={styles.categoryInfo}>
-              <span style={styles.categoryLabel}>ì¹´í…Œê³ ë¦¬:</span>
+              <span style={styles.categoryLabel}>카테고리:</span>
               <span style={styles.categoryName}>{product.category.name}</span>
             </div>
           )}
@@ -221,25 +221,25 @@ function ProductDetailPage() {
           </div>
 
           <div style={styles.stockInfo}>
-            <span style={styles.stockLabel}>ìž¬ê³ :</span>
+            <span style={styles.stockLabel}>재고:</span>
             <span style={styles.stockValue}>
-              {product.stock > 0 ? `${product.stock}ê°œ` : 'í’ˆì ˆ'}
+              {product.stock > 0 ? `${product.stock}개` : '품절'}
             </span>
           </div>
 
-          {/* ìž¬ìž…ê³  íˆ¬í‘œ ì •ë³´ */}
+          {/* 재입고 투표 정보 */}
           {(product?.status === 'OUT_OF_STOCK' || product?.stock == 0 || !product?.stock) && (
             <div style={styles.restockSection}>
               <div style={styles.restockInfo}>
-                <span style={styles.restockLabel}>ìž¬ìž…ê³  ìš”ì²­:</span>
-                <span style={styles.restockCount}>{restockVoteCount}ëª…ì´ ì›í•´ìš”</span>
+                <span style={styles.restockLabel}>재입고 요청:</span>
+                <span style={styles.restockCount}>{restockVoteCount}명이 원해요</span>
               </div>
               <div style={styles.restockButtons}>
                 <button onClick={handleRestockVote} style={styles.restockVoteButton}>
-                  ìž¬ìž…ê³  íˆ¬í‘œí•˜ê¸°
+                  재입고 투표하기
                 </button>
                 <button onClick={handleRestockNotification} style={styles.restockNotifyButton}>
-                  ìž¬ìž…ê³  ì•Œë¦¼ ì‹ ì²­
+                  재입고 알림 신청
                 </button>
               </div>
             </div>
@@ -248,7 +248,7 @@ function ProductDetailPage() {
           {product.stock > 0 && (
             <>
               <div style={styles.quantitySection}>
-                <span style={styles.quantityLabel}>ìˆ˜ëŸ‰:</span>
+                <span style={styles.quantityLabel}>수량:</span>
                 <div style={styles.quantityControl}>
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -267,7 +267,7 @@ function ProductDetailPage() {
               </div>
 
               <div style={styles.totalSection}>
-                <span style={styles.totalLabel}>ì´ ê¸ˆì•¡:</span>
+                <span style={styles.totalLabel}>총 금액:</span>
                 <span style={styles.totalPrice}>
                   {formatPrice(product.price * quantity)}
                 </span>
@@ -275,34 +275,34 @@ function ProductDetailPage() {
 
               <div style={styles.buttonGroup}>
                 <button onClick={handleAddToCart} style={styles.cartButton}>
-                  ðŸ›’ ìž¥ë°”êµ¬ë‹ˆ
+                  🛒 장바구니
                 </button>
                 <button onClick={handleOrder} style={styles.buyButton}>
-                  ë°”ë¡œ êµ¬ë§¤
+                  바로 구매
                 </button>
               </div>
             </>
           )}
 
           <div style={styles.description}>
-            <h3 style={styles.descriptionTitle}>ìƒí’ˆ ì„¤ëª…</h3>
+            <h3 style={styles.descriptionTitle}>상품 설명</h3>
             <p style={styles.descriptionText}>{product.description}</p>
           </div>
         </div>
       </div>
 
-      {/* ë¦¬ë·° ì„¹ì…˜ */}
+      {/* 리뷰 섹션 */}
       <div style={styles.reviewSection}>
-        <h2 style={styles.reviewTitle}>ìƒí’ˆ ë¦¬ë·°</h2>
+        <h2 style={styles.reviewTitle}>상품 리뷰</h2>
         {reviews.length === 0 ? (
-          <div style={styles.noReviews}>ì•„ì§ ë¦¬ë·°ê°€ ì—†ìŠµë‹ˆë‹¤.</div>
+          <div style={styles.noReviews}>아직 리뷰가 없습니다.</div>
         ) : (
           <div style={styles.reviewList}>
             {reviews.map((review) => (
               <div key={review.id} style={styles.reviewCard}>
                 <div style={styles.reviewHeader}>
                   <div style={styles.reviewRating}>
-                    {'â­'.repeat(review.rating)}
+                    {'⭐'.repeat(review.rating)}
                   </div>
                   <div style={styles.reviewDate}>
                     {new Date(review.createdAt).toLocaleDateString()}
