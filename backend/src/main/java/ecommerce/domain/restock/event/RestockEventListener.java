@@ -73,11 +73,10 @@ public class RestockEventListener {
 
                 notificationRepository.save(notification);
 
-                // 알림 발송 완료 플래그 업데이트
-                restockNotification.setIsNotified(true);
-                restockNotificationRepository.save(restockNotification);
+                // 재입고 알림 레코드 삭제 (상태 초기화)
+                restockNotificationRepository.delete(restockNotification);
 
-                log.info("재입고 알림 발송 완료: 사용자ID={}, 상품={}",
+                log.info("재입고 알림 발송 및 삭제: userId={}, product={}",
                         restockNotification.getUser().getId(), product.getName());
             } catch (Exception e) {
                 log.error("재입고 알림 발송 실패: 사용자ID={}, 에러={}",

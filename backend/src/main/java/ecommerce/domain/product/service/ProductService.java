@@ -18,9 +18,11 @@ import ecommerce.domain.seller.entity.Seller;
 import ecommerce.domain.seller.repository.SellerRepository;
 import ecommerce.domain.user.entity.User;
 import ecommerce.domain.user.repository.UserRepository;
+import ecommerce.domain.restock.event.ProductRestockedEvent;
 import ecommerce.infrastructure.naver.NaverShoppingApiClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +42,7 @@ public class ProductService {
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
     private final NaverShoppingApiClient naverShoppingApiClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 상품 생성
@@ -238,7 +241,7 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse updateStock(String email, Long productId, StockUpdateRequest request) {
-        log.info("재고 업데이트: email={}, productId={}, newStock={}",
+        log.info("재고 업데이트 요청: email={}, productId={}, newStock={}",
                 email, productId, request.getQuantity());
 
         // 사용자 조회
@@ -255,12 +258,26 @@ public class ProductService {
             throw new ForbiddenException(ErrorCode.FORBIDDEN);
         }
 
+        // 이전 재고 저장 (이벤트용)
+        Integer previousStock = product.getStock();
+
         // 재고 업데이트
         product.setStock(request.getQuantity());
         product.setStatus(request.getQuantity() > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK);
 
         Product updatedProduct = productRepository.save(product);
         log.info("재고 업데이트 완료: productId={}, newStock={}", productId, request.getQuantity());
+
+        // 재입고 이벤트 발행 (재고가 0 → 1+ 변경된 경우만)
+        if (previousStock == 0 && request.getQuantity() > 0) {
+            log.info("재입고 이벤트 발행: productId={}, previousStock={}, currentStock={}",
+                    productId, previousStock, request.getQuantity());
+            eventPublisher.publishEvent(new ProductRestockedEvent(
+                    productId,
+                    previousStock,
+                    request.getQuantity()
+            ));
+        }
 
         return ProductResponse.from(updatedProduct);
     }
