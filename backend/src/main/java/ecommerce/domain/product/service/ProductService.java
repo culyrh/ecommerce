@@ -186,6 +186,9 @@ public class ProductService {
             product.setCategory(category);
         }
 
+        // 재입고 이벤트 발행을 위해 이전 재고 저장
+        Integer previousStock = product.getStock();
+
         // 상품 정보 업데이트
         if (request.getName() != null) {
             product.setName(request.getName());
@@ -207,6 +210,17 @@ public class ProductService {
 
         Product updatedProduct = productRepository.save(product);
         log.info("상품 수정 완료: productId={}", updatedProduct.getId());
+
+        // 재입고 이벤트 발행 (재고가 0 → 1+ 변경된 경우만)
+        if (request.getStock() != null && previousStock == 0 && request.getStock() > 0) {
+            log.info("재입고 이벤트 발행 (updateProduct): productId={}, previousStock={}, currentStock={}",
+                    productId, previousStock, request.getStock());
+            eventPublisher.publishEvent(new ProductRestockedEvent(
+                    productId,
+                    previousStock,
+                    request.getStock()
+            ));
+        }
 
         return ProductResponse.from(updatedProduct);
     }
