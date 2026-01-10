@@ -240,10 +240,6 @@ function ProtectedRoute({ children, requiredRole }) {
     try {
       const userData = await apiService.getCurrentUser();
       setUser(userData);
-
-      if (requiredRole && userData.role !== requiredRole && userData.role !== 'ROLE_ADMIN') {
-        alert('접근 권한이 없습니다.');
-      }
     } catch (err) {
       console.error('인증 실패:', err);
     } finally {
@@ -259,10 +255,12 @@ function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" />;
   }
 
+  // requiredRole이 지정된 경우, 권한 체크 후 리다이렉트
   if (requiredRole && user.role !== requiredRole && user.role !== 'ROLE_ADMIN') {
+    alert('접근 권한이 없습니다.');
     return <Navigate to="/" />;
   }
-
+  
   return children;
 }
 
