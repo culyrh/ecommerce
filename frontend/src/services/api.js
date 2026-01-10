@@ -104,8 +104,8 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async getDashboard() {
-    const response = await fetch(`${API_BASE_URL}/sellers/me/dashboard`, {
+  async getSellerDashboard() {
+    const response = await fetch(`${API_BASE_URL}/sellers/dashboard`, {
       method: 'GET',
       headers: this.getHeaders(true),
     });
@@ -114,20 +114,17 @@ class ApiService {
 
   // ==================== PRODUCT ====================
   
-  async getMyProducts(page = 0, size = 20) {
-    const response = await fetch(
-      `${API_BASE_URL}/products/my?page=${page}&size=${size}`,
-      {
-        method: 'GET',
-        headers: this.getHeaders(true),
-      }
-    );
-    return this.handleResponse(response);
-  }
-
   async getProducts(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_BASE_URL}/products?${queryString}`, {
+    const queryParams = new URLSearchParams();
+    
+    if (params.keyword) queryParams.append('keyword', params.keyword);
+    if (params.categoryId) queryParams.append('categoryId', params.categoryId);
+    if (params.page !== undefined) queryParams.append('page', params.page);
+    if (params.size !== undefined) queryParams.append('size', params.size);
+    if (params.sort) queryParams.append('sort', params.sort);
+    if (params.direction) queryParams.append('direction', params.direction);
+
+    const response = await fetch(`${API_BASE_URL}/products?${queryParams}`, {
       method: 'GET',
       headers: this.getHeaders(),
     });
@@ -168,6 +165,17 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  async getMyProducts(page = 0, size = 20) {
+    const response = await fetch(
+      `${API_BASE_URL}/products/my?page=${page}&size=${size}`,
+      {
+        method: 'GET',
+        headers: this.getHeaders(true),
+      }
+    );
+    return this.handleResponse(response);
+  }
+
   async updateStock(id, quantity) {
     const response = await fetch(`${API_BASE_URL}/products/${id}/stock`, {
       method: 'PUT',
@@ -177,9 +185,9 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async searchNaverProducts(keyword, display = 10) {
+  async searchNaverProducts(query, start = 1, display = 20) {
     const response = await fetch(
-      `${API_BASE_URL}/products/naver/search?keyword=${encodeURIComponent(keyword)}&display=${display}`,
+      `${API_BASE_URL}/products/naver/search?query=${encodeURIComponent(query)}&start=${start}&display=${display}`,
       {
         method: 'GET',
         headers: this.getHeaders(true),
@@ -190,16 +198,36 @@ class ApiService {
 
   // ==================== CATEGORY ====================
   
-  async getCategories() {
+  async getCategories(page = 0, size = 100) {
+    const response = await fetch(
+      `${API_BASE_URL}/categories?page=${page}&size=${size}`,
+      {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }
+    );
+    return this.handleResponse(response);
+  }
+
+  async createCategory(data) {
     const response = await fetch(`${API_BASE_URL}/categories`, {
-      method: 'GET',
-      headers: this.getHeaders(),
+      method: 'POST',
+      headers: this.getHeaders(true),
+      body: JSON.stringify(data),
     });
     return this.handleResponse(response);
   }
 
   // ==================== CART ====================
   
+  async getMyCart() {
+    const response = await fetch(`${API_BASE_URL}/cart`, {
+      method: 'GET',
+      headers: this.getHeaders(true),
+    });
+    return this.handleResponse(response);
+  }
+
   async addToCart(productId, quantity) {
     const response = await fetch(`${API_BASE_URL}/cart`, {
       method: 'POST',
@@ -209,24 +237,8 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async getMyCart() {
-    const response = await fetch(`${API_BASE_URL}/cart`, {
-      method: 'GET',
-      headers: this.getHeaders(true),
-    });
-    return this.handleResponse(response);
-  }
-
-  async getCartCount() {
-    const response = await fetch(`${API_BASE_URL}/cart/count`, {
-      method: 'GET',
-      headers: this.getHeaders(true),
-    });
-    return this.handleResponse(response);
-  }
-
-  async updateCartItem(id, quantity) {
-    const response = await fetch(`${API_BASE_URL}/cart/${id}`, {
+  async updateCartItem(itemId, quantity) {
+    const response = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
       method: 'PUT',
       headers: this.getHeaders(true),
       body: JSON.stringify({ quantity }),
@@ -234,16 +246,8 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async removeCartItem(id) {
-    const response = await fetch(`${API_BASE_URL}/cart/${id}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(true),
-    });
-    return this.handleResponse(response);
-  }
-
-  async clearCart() {
-    const response = await fetch(`${API_BASE_URL}/cart`, {
+  async removeFromCart(itemId) {
+    const response = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
       method: 'DELETE',
       headers: this.getHeaders(true),
     });
@@ -263,7 +267,7 @@ class ApiService {
 
   async getMyOrders(page = 0, size = 20) {
     const response = await fetch(
-      `${API_BASE_URL}/orders?page=${page}&size=${size}`,
+      `${API_BASE_URL}/orders/my?page=${page}&size=${size}`,
       {
         method: 'GET',
         headers: this.getHeaders(true),
@@ -280,8 +284,45 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  async updateOrderStatus(id, status) {
+    const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
+      method: 'PUT',
+      headers: this.getHeaders(true),
+      body: JSON.stringify({ status }),
+    });
+    return this.handleResponse(response);
+  }
+
+  async cancelOrder(id) {
+    const response = await fetch(`${API_BASE_URL}/orders/${id}/cancel`, {
+      method: 'PUT',
+      headers: this.getHeaders(true),
+    });
+    return this.handleResponse(response);
+  }
+
   // ==================== REVIEW ====================
   
+  async createReview(data) {
+    const response = await fetch(`${API_BASE_URL}/reviews`, {
+      method: 'POST',
+      headers: this.getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse(response);
+  }
+
+  async getMyReviews(page = 0, size = 20) {
+    const response = await fetch(
+      `${API_BASE_URL}/reviews/my?page=${page}&size=${size}`,
+      {
+        method: 'GET',
+        headers: this.getHeaders(true),
+      }
+    );
+    return this.handleResponse(response);
+  }
+
   async getProductReviews(productId, page = 0, size = 20) {
     const response = await fetch(
       `${API_BASE_URL}/products/${productId}/reviews?page=${page}&size=${size}`,
@@ -293,35 +334,18 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async createReview(data) {
-    const response = await fetch(`${API_BASE_URL}/reviews`, {
-      method: 'POST',
-      headers: this.getHeaders(true),
-      body: JSON.stringify(data),
-    });
-    return this.handleResponse(response);
-  }
-
-  async updateReview(id, data) {
-    const response = await fetch(`${API_BASE_URL}/reviews/${id}`, {
-      method: 'PUT',
-      headers: this.getHeaders(true),
-      body: JSON.stringify(data),
-    });
-    return this.handleResponse(response);
-  }
-
-  async deleteReview(id) {
-    const response = await fetch(`${API_BASE_URL}/reviews/${id}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(true),
-    });
-    return this.handleResponse(response);
-  }
-
   // ==================== RESTOCK ====================
   
-  async voteRestock(productId) {
+  async subscribeRestock(productId) {
+    const response = await fetch(`${API_BASE_URL}/restock-notifications`, {
+      method: 'POST',
+      headers: this.getHeaders(true),
+      body: JSON.stringify({ productId }),
+    });
+    return this.handleResponse(response);
+  }
+
+  async voteForRestock(productId) {
     const response = await fetch(`${API_BASE_URL}/restock-votes`, {
       method: 'POST',
       headers: this.getHeaders(true),
@@ -341,20 +365,23 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async requestRestockNotification(productId) {
-    const response = await fetch(`${API_BASE_URL}/restock-notifications`, {
-      method: 'POST',
-      headers: this.getHeaders(true),
-      body: JSON.stringify({ productId }),
-    });
-    return this.handleResponse(response);
-  }
-
   async getMyRestockNotifications(page = 0, size = 20) {
     const response = await fetch(
       `${API_BASE_URL}/restock-notifications/my?page=${page}&size=${size}`,
       {
         method: 'GET',
+        headers: this.getHeaders(true),
+      }
+    );
+    return this.handleResponse(response);
+  }
+
+  // ✅ 재입고 알림만 취소 가능 (투표는 취소 불가)
+  async cancelRestockNotification(id) {
+    const response = await fetch(
+      `${API_BASE_URL}/restock-notifications/${id}`,
+      {
+        method: 'DELETE',
         headers: this.getHeaders(true),
       }
     );

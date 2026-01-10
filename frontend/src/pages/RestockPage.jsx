@@ -32,6 +32,21 @@ function RestockPage() {
     }
   };
 
+  // ✅ 재입고 알림만 취소 가능
+  const handleCancelNotification = async (id) => {
+    if (!window.confirm('재입고 알림을 취소하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await apiService.cancelRestockNotification(id);
+      alert('재입고 알림이 취소되었습니다.');
+      loadData(); // 목록 새로고침
+    } catch (err) {
+      alert('알림 취소에 실패했습니다: ' + err.message);
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('ko-KR');
   };
@@ -78,12 +93,21 @@ function RestockPage() {
               )}
             </div>
 
-            <button
-              onClick={() => navigate(`/products/${notification.product?.id}`)}
-              style={styles.viewButton}
-            >
-              상품 보기
-            </button>
+            {/* ✅ 재입고 알림만 취소 버튼 추가 */}
+            <div style={styles.buttonGroup}>
+              <button
+                onClick={() => navigate(`/products/${notification.product?.id}`)}
+                style={styles.viewButton}
+              >
+                상품 보기
+              </button>
+              <button
+                onClick={() => handleCancelNotification(notification.id)}
+                style={styles.cancelButton}
+              >
+                취소
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -128,6 +152,7 @@ function RestockPage() {
               </p>
             </div>
 
+            {/* ❌ 투표는 취소 버튼 없음 (판매자가 기록으로 확인해야 함) */}
             <button
               onClick={() => navigate(`/products/${vote.product?.id}`)}
               style={styles.viewButton}
@@ -341,12 +366,30 @@ const styles = {
     color: '#666',
     margin: '10px 0 0 0',
   },
+  // ✅ 알림 탭에만 사용되는 버튼 그룹
+  buttonGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
   viewButton: {
     padding: '10px 20px',
     fontSize: '14px',
     fontWeight: 'bold',
     color: 'white',
     backgroundColor: '#007bff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  // ✅ 알림 취소 버튼 (빨간색)
+  cancelButton: {
+    padding: '10px 20px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: 'white',
+    backgroundColor: '#dc3545',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
