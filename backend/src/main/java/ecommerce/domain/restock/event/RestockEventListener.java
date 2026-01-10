@@ -15,6 +15,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 
@@ -31,16 +33,60 @@ public class RestockEventListener {
 
     private static final String VOTE_COUNT_KEY_PREFIX = "restock:vote:count:";
 
-    @Async
-    @EventListener
+    /**
+     * 재입고 투표 초기화 (동기)
+     * 트랜잭션 커밋 후 즉시 실행하여 데이터 정합성 보장
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional
-    public void handleProductRestocked(ProductRestockedEvent event) {
-        log.info("재입고 이벤트 수신: 상품ID={}, 이전재고={}, 현재재고={}",
-                event.getProductId(), event.getPreviousStock(), event.getCurrentStock());
+    public void handleRestockVoteCleanup(ProductRestockedEvent event) {
+        log.info("재입고 투표 초기화 시작: 상품ID={}", event.getProductId());
 
         // 재고가 0 → 1+ 변경된 경우만 처리
         if (event.getPreviousStock() > 0 || event.getCurrentStock() <= 0) {
-            log.info("재입고 알림 조건 미충족 - 이벤트 무시");
+            log.info("재입고 조건 미충족 - 투표 초기화 생략");
+            return;
+        }
+
+        // 상품 조회
+        Product product = productRepository.findById(event.getProductId())
+                .orElse(null);
+
+        if (product == null) {
+            log.error("상품을 찾을 수 없습니다: ID={}", event.getProductId());
+            return;
+        }
+
+        // 재입고 투표 초기화 (DB에서 삭제)
+        List<ecommerce.domain.restock.entity.RestockVote> votes =
+                restockVoteRepository.findByProduct(product);
+
+        if (!votes.isEmpty()) {
+            restockVoteRepository.deleteAll(votes);
+            restockVoteRepository.flush(); // 즉시 DB에 반영
+            log.info("재입고 투표 초기화 완료: 상품={}, 삭제된 투표수={}",
+                    product.getName(), votes.size());
+        }
+
+        // Redis 투표 카운트 초기화
+        String voteCountKey = VOTE_COUNT_KEY_PREFIX + product.getId();
+        redisService.delete(voteCountKey);
+        log.info("Redis 투표 카운트 초기화 완료: key={}", voteCountKey);
+    }
+
+    /**
+     * 재입고 알림 발송 (비동기)
+     * 알림 발송이 실패해도 투표 초기화에는 영향 없음
+     */
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional
+    public void handleRestockNotification(ProductRestockedEvent event) {
+        log.info("재입고 알림 발송 시작: 상품ID={}", event.getProductId());
+
+        // 재고가 0 → 1+ 변경된 경우만 처리
+        if (event.getPreviousStock() > 0 || event.getCurrentStock() <= 0) {
+            log.info("재입고 조건 미충족 - 알림 발송 생략");
             return;
         }
 
@@ -59,51 +105,38 @@ public class RestockEventListener {
 
         if (notifications.isEmpty()) {
             log.info("재입고 알림 신청자 없음: 상품={}", product.getName());
-        } else {
-            log.info("재입고 알림 발송 시작: 상품={}, 신청자수={}", product.getName(), notifications.size());
+            return;
+        }
 
-            // 각 사용자에게 알림 생성
-            for (RestockNotification restockNotification : notifications) {
-                try {
-                    String message = String.format("'%s' 상품이 재입고되었습니다!", product.getName());
+        log.info("재입고 알림 발송 시작: 상품={}, 신청자수={}", product.getName(), notifications.size());
 
-                    Notification notification = Notification.builder()
-                            .user(restockNotification.getUser())
-                            .type(NotificationType.RESTOCK)
-                            .title("재입고 알림")
-                            .content(message)
-                            .isRead(false)
-                            .build();
+        // 각 사용자에게 알림 생성
+        for (RestockNotification restockNotification : notifications) {
+            try {
+                String message = String.format("'%s' 상품이 재입고되었습니다!", product.getName());
 
-                    notificationRepository.save(notification);
+                Notification notification = Notification.builder()
+                        .user(restockNotification.getUser())
+                        .type(NotificationType.RESTOCK)
+                        .title("재입고 알림")
+                        .content(message)
+                        .isRead(false)
+                        .build();
 
-                    // 알림 발송 플래그 업데이트 (삭제하지 않음)
-                    restockNotification.setIsNotified(true);
-                    restockNotificationRepository.save(restockNotification);
+                notificationRepository.save(notification);
 
-                    log.info("재입고 알림 발송 및 플래그 업데이트: userId={}, product={}",
-                            restockNotification.getUser().getId(), product.getName());
-                } catch (Exception e) {
-                    log.error("재입고 알림 발송 실패: 사용자ID={}, 에러={}",
-                            restockNotification.getUser().getId(), e.getMessage());
-                }
+                // 알림 발송 플래그 업데이트 (삭제하지 않음)
+                restockNotification.setIsNotified(true);
+                restockNotificationRepository.save(restockNotification);
+
+                log.info("재입고 알림 발송 완료: userId={}, product={}",
+                        restockNotification.getUser().getId(), product.getName());
+            } catch (Exception e) {
+                log.error("재입고 알림 발송 실패: 사용자ID={}, 에러={}",
+                        restockNotification.getUser().getId(), e.getMessage());
             }
-
-            log.info("재입고 알림 처리 완료: 상품={}, 발송수={}", product.getName(), notifications.size());
         }
 
-        // 재입고 투표 초기화 (DB에서 삭제)
-        List<ecommerce.domain.restock.entity.RestockVote> votes =
-                restockVoteRepository.findByProduct(product);
-
-        if (!votes.isEmpty()) {
-            restockVoteRepository.deleteAll(votes);
-            log.info("재입고 투표 초기화: 상품={}, 삭제된 투표수={}", product.getName(), votes.size());
-        }
-
-        // Redis 투표 카운트 초기화
-        String voteCountKey = VOTE_COUNT_KEY_PREFIX + product.getId();
-        redisService.delete(voteCountKey);
-        log.info("Redis 투표 카운트 초기화: key={}", voteCountKey);
+        log.info("재입고 알림 처리 완료: 상품={}, 발송수={}", product.getName(), notifications.size());
     }
 }
