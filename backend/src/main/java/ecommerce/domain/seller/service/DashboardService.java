@@ -94,8 +94,17 @@ public class DashboardService {
         String cachedValue = redisService.getStringValue(key);
 
         if (cachedValue != null) {
-            log.debug("Redis에서 오늘의 주문 수 조회: sellerId={}, count={}", sellerId, cachedValue);
-            return Long.parseLong(cachedValue);
+            try {
+                // 따옴표 제거 후 파싱 (방어 코드)
+                String cleaned = cachedValue.replace("\"", "").trim();
+                long result = Long.parseLong(cleaned);
+                log.debug("Redis에서 오늘의 주문 수 조회: sellerId={}, count={}", sellerId, result);
+                return result;
+            } catch (NumberFormatException e) {
+                log.error("Redis 값 파싱 실패, 캐시 삭제: key={}, value={}", key, cachedValue, e);
+                redisService.delete(key);
+                // DB에서 조회하도록 계속 진행
+            }
         }
 
         // Redis에 없으면 DB에서 조회
@@ -127,8 +136,17 @@ public class DashboardService {
         String cachedValue = redisService.getStringValue(key);
 
         if (cachedValue != null) {
-            log.debug("Redis에서 오늘의 매출 조회: sellerId={}, revenue={}", sellerId, cachedValue);
-            return new BigDecimal(cachedValue);
+            try {
+                // 따옴표 제거 후 파싱 (방어 코드)
+                String cleaned = cachedValue.replace("\"", "").trim();
+                BigDecimal result = new BigDecimal(cleaned);
+                log.debug("Redis에서 오늘의 매출 조회: sellerId={}, revenue={}", sellerId, result);
+                return result;
+            } catch (NumberFormatException e) {
+                log.error("Redis 값 파싱 실패, 캐시 삭제: key={}, value={}", key, cachedValue, e);
+                redisService.delete(key);
+                // DB에서 조회하도록 계속 진행
+            }
         }
 
         // Redis에 없으면 DB에서 조회

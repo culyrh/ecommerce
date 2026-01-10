@@ -7,6 +7,8 @@ function SellerProductListPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingStock, setEditingStock] = useState(null);
+  const [stockValue, setStockValue] = useState('');
 
   useEffect(() => {
     loadProducts();
@@ -35,6 +37,33 @@ function SellerProductListPage() {
     } catch (err) {
       alert('삭제 실패: ' + err.message);
     }
+  };
+
+  const handleStockEdit = (product) => {
+    setEditingStock(product.id);
+    setStockValue(product.stock);
+  };
+
+  const handleStockSave = async (productId) => {
+    if (!stockValue || stockValue < 0) {
+      alert('올바른 재고 수량을 입력해주세요.');
+      return;
+    }
+
+    try {
+      await apiService.updateStock(productId, parseInt(stockValue));
+      alert('재고가 수정되었습니다!');
+      setEditingStock(null);
+      setStockValue('');
+      loadProducts();
+    } catch (err) {
+      alert('재고 수정 실패: ' + err.message);
+    }
+  };
+
+  const handleStockCancel = () => {
+    setEditingStock(null);
+    setStockValue('');
   };
 
   const formatPrice = (price) => {
@@ -101,12 +130,48 @@ function SellerProductListPage() {
                   <td style={styles.td}>{product.name}</td>
                   <td style={styles.td}>{formatPrice(product.price)}</td>
                   <td style={styles.td}>
-                    <span style={{
-                      ...styles.stockBadge,
-                      ...(product.stockQuantity < 10 ? styles.stockLow : {})
-                    }}>
-                      {product.stockQuantity}개
-                    </span>
+                    {editingStock === product.id ? (
+                      <div style={styles.stockEditContainer}>
+                        <input
+                          type="number"
+                          value={stockValue}
+                          onChange={(e) => setStockValue(e.target.value)}
+                          style={styles.stockInput}
+                          min="0"
+                          autoFocus
+                        />
+                        <button 
+                          onClick={() => handleStockSave(product.id)} 
+                          style={styles.saveButton}
+                          title="저장"
+                        >
+                          ✓
+                        </button>
+                        <button 
+                          onClick={handleStockCancel} 
+                          style={styles.cancelButton}
+                          title="취소"
+                        >
+                          ✗
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={styles.stockContainer}>
+                        <span style={{
+                          ...styles.stockBadge,
+                          ...(product.stock < 10 ? styles.stockLow : {})
+                        }}>
+                          {product.stock}개
+                        </span>
+                        <button 
+                          onClick={() => handleStockEdit(product)} 
+                          style={styles.stockEditButton}
+                          title="재고 수정"
+                        >
+                          ✏️
+                        </button>
+                      </div>
+                    )}
                   </td>
                   <td style={styles.td}>
                     <span style={{
@@ -144,9 +209,9 @@ function SellerProductListPage() {
 
 const styles = {
   container: {
-    maxWidth: '1200px',
+    padding: '40px',
+    maxWidth: '1400px',
     margin: '0 auto',
-    padding: '20px',
   },
   header: {
     display: 'flex',
@@ -169,12 +234,6 @@ const styles = {
     borderRadius: '6px',
     cursor: 'pointer',
   },
-  loading: {
-    textAlign: 'center',
-    padding: '40px',
-    fontSize: '18px',
-    color: '#666',
-  },
   error: {
     padding: '15px',
     backgroundColor: '#fee',
@@ -182,9 +241,15 @@ const styles = {
     borderRadius: '6px',
     marginBottom: '20px',
   },
+  loading: {
+    textAlign: 'center',
+    padding: '40px',
+    fontSize: '18px',
+    color: '#666',
+  },
   empty: {
     textAlign: 'center',
-    padding: '60px 20px',
+    padding: '60px',
     backgroundColor: 'white',
     borderRadius: '8px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
@@ -214,43 +279,88 @@ const styles = {
   },
   td: {
     padding: '15px',
-    color: '#666',
+    verticalAlign: 'middle',
   },
   productImage: {
-    width: '60px',
-    height: '60px',
+    width: '80px',
+    height: '80px',
     objectFit: 'cover',
-    borderRadius: '4px',
+    borderRadius: '6px',
   },
   noImage: {
-    width: '60px',
-    height: '60px',
+    width: '80px',
+    height: '80px',
+    backgroundColor: '#e9ecef',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#e9ecef',
-    borderRadius: '4px',
-    fontSize: '10px',
+    borderRadius: '6px',
     color: '#6c757d',
+    fontSize: '12px',
+  },
+  stockContainer: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
   },
   stockBadge: {
-    padding: '4px 8px',
-    borderRadius: '4px',
+    padding: '6px 12px',
+    backgroundColor: '#28a745',
+    color: 'white',
+    borderRadius: '20px',
     fontSize: '14px',
     fontWeight: 'bold',
-    backgroundColor: '#d4edda',
-    color: '#155724',
   },
   stockLow: {
-    backgroundColor: '#f8d7da',
-    color: '#721c24',
+    backgroundColor: '#dc3545',
   },
-  statusBadge: {
-    padding: '4px 12px',
-    borderRadius: '12px',
-    fontSize: '12px',
+  stockEditButton: {
+    padding: '4px 8px',
+    fontSize: '14px',
+    backgroundColor: 'transparent',
+    border: '1px solid #dee2e6',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+  stockEditContainer: {
+    display: 'flex',
+    gap: '5px',
+    alignItems: 'center',
+  },
+  stockInput: {
+    width: '70px',
+    padding: '6px',
+    fontSize: '14px',
+    border: '1px solid #007bff',
+    borderRadius: '4px',
+    outline: 'none',
+  },
+  saveButton: {
+    padding: '6px 10px',
+    fontSize: '16px',
     fontWeight: 'bold',
     color: 'white',
+    backgroundColor: '#28a745',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+  cancelButton: {
+    padding: '6px 10px',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: 'white',
+    backgroundColor: '#6c757d',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+  statusBadge: {
+    padding: '6px 12px',
+    color: 'white',
+    borderRadius: '20px',
+    fontSize: '14px',
+    fontWeight: 'bold',
   },
   actions: {
     display: 'flex',
@@ -261,7 +371,7 @@ const styles = {
     fontSize: '14px',
     fontWeight: 'bold',
     color: 'white',
-    backgroundColor: '#007bff',
+    backgroundColor: '#17a2b8',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
