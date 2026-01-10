@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,10 +22,12 @@ public interface RestockVoteRepository extends JpaRepository<RestockVote, Long> 
 
     boolean existsByProductIdAndUserId(Long productId, Long userId);
 
-    // 추가 메서드
     boolean existsByUserAndProduct(User user, Product product);
 
     Page<RestockVote> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
     Page<RestockVote> findByProductOrderByCreatedAtDesc(Product product, Pageable pageable);
+
+    // 재입고 투표 초기화를 위한 메서드
+    List<RestockVote> findByProduct(Product product);
 }
