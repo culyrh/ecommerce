@@ -57,7 +57,7 @@ function ProductDetailPage() {
 
   const loadRestockVoteCount = async () => {
     try {
-      // 백엔드에 재입고 투표 수를 가져오는 API가 있다면 사용
+      // 백엔드에 재입고 투표 수를 가져오는 API로 수정하기
       // 현재는 투표 목록의 totalElements를 사용
       const response = await fetch(`http://54.206.243.31:8080/api/restock-votes/products/${id}?page=0&size=1`);
       if (response.ok) {
@@ -114,6 +114,7 @@ function ProductDetailPage() {
     });
   };
 
+  // ✅ 수정: voteForRestock 사용
   const handleRestockVote = async () => {
     if (!user) {
       alert('로그인이 필요합니다.');
@@ -122,7 +123,7 @@ function ProductDetailPage() {
     }
 
     try {
-      await apiService.voteRestock(product.id);
+      await apiService.voteForRestock(product.id);
       alert('재입고 투표가 완료되었습니다!');
       loadRestockVoteCount(); // 투표 수 새로고침
     } catch (err) {
@@ -134,6 +135,7 @@ function ProductDetailPage() {
     }
   };
 
+  // 수정: subscribeRestock 사용
   const handleRestockNotification = async () => {
     if (!user) {
       alert('로그인이 필요합니다.');
@@ -142,7 +144,7 @@ function ProductDetailPage() {
     }
 
     try {
-      await apiService.requestRestockNotification(product.id);
+      await apiService.subscribeRestock(product.id);
       alert('재입고 알림 신청이 완료되었습니다!');
     } catch (err) {
       alert('재입고 알림 신청 실패: ' + err.message);
@@ -305,11 +307,15 @@ function ProductDetailPage() {
                     {'⭐'.repeat(review.rating)}
                   </div>
                   <div style={styles.reviewDate}>
-                    {new Date(review.createdAt).toLocaleDateString()}
+                    {new Date(review.createdAt).toLocaleDateString('ko-KR')}
                   </div>
                 </div>
-                <div style={styles.reviewAuthor}>{review.userName}</div>
-                <div style={styles.reviewComment}>{review.comment}</div>
+                <div style={styles.reviewAuthor}>
+                  {review.user?.name || '익명'}
+                </div>
+                <div style={styles.reviewComment}>
+                  {review.comment}
+                </div>
               </div>
             ))}
           </div>
@@ -327,16 +333,16 @@ const styles = {
   },
   loading: {
     textAlign: 'center',
-    padding: '40px',
+    padding: '100px',
     fontSize: '18px',
     color: '#666',
   },
   error: {
-    padding: '15px',
+    padding: '20px',
     backgroundColor: '#fee',
     color: '#c33',
     borderRadius: '6px',
-    marginBottom: '20px',
+    textAlign: 'center',
   },
   productSection: {
     display: 'grid',
