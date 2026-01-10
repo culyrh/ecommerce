@@ -11,6 +11,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import BecomeSellerPage from './pages/BecomeSellerPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
 import SellerProductListPage from './pages/SellerProductListPage';
+import ProductFormPage from './pages/ProductFormPage';
 import OrderCreatePage from './pages/OrderCreatePage';
 import OrderListPage from './pages/OrderListPage';
 import OrderDetailPage from './pages/OrderDetailPage';
@@ -22,7 +23,6 @@ import NotificationPage from './pages/NotificationPage';
 import ProfilePage from './pages/ProfilePage';
 import MyReviewsPage from './pages/MyReviewsPage';
 import RestockPage from './pages/RestockPage';
-
 // 레이아웃 컴포넌트
 function Layout({ children }) {
   const navigate = useNavigate();
@@ -357,6 +357,16 @@ function App() {
               <Route path="/seller/products" element={
                 <ProtectedRoute>
                   <SellerProductListPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/seller/products/new" element={
+                <ProtectedRoute>
+                  <ProductFormPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/seller/products/:id/edit" element={
+                <ProtectedRoute>
+                  <ProductFormPage />
                 </ProtectedRoute>
               } />
             </Routes>

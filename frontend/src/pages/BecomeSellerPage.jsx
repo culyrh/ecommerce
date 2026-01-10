@@ -24,7 +24,7 @@ function BecomeSellerPage() {
       setUser(userData);
       
       // 이미 판매자인 경우
-      if (userData.role === 'ROLE_SELLER' || userData.role === 'ROLE_ADMIN') {
+      if (userData.roles?.includes('ROLE_SELLER') || userData.roles?.includes('ROLE_ADMIN')) {
         alert('이미 판매자이십니다.');
         navigate('/seller/dashboard');
       }
