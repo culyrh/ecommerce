@@ -58,16 +58,19 @@ function BecomeSellerPage() {
     try {
       setLoading(true);
       setError('');
+      setError('');
       
       await apiService.registerSeller({
         ...formData,
         minStockThreshold: parseInt(formData.minStockThreshold)
       });
       
-      alert('판매자 등록이 완료되었습니다!');
+      alert('판매자 등록이 완료되었습니다!\n새로운 권한을 적용하기 위해 다시 로그인합니다.');
       
-      // 토큰 갱신을 위해 다시 로그인하거나, 페이지 새로고침
-      window.location.href = '/seller/dashboard';
+      // JWT 토큰에 ROLE_SELLER가 반영되려면 재로그인 필요
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      navigate('/login');
       
     } catch (err) {
       if (err.code === 'DUPLICATE_BUSINESS_NUMBER') {

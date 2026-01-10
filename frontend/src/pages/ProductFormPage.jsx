@@ -4,7 +4,7 @@ import apiService from '../services/api';
 
 function ProductFormPage() {
   const navigate = useNavigate();
-  const { id } = useParams(); // 수정 모드인 경우 상품 ID
+  const { id } = useParams();
   const isEditMode = !!id;
 
   const [categories, setCategories] = useState([]);
@@ -30,8 +30,8 @@ function ProductFormPage() {
 
   const loadCategories = async () => {
     try {
-      const data = await apiService.getCategories(0, 100);
-      setCategories(data.content || []);
+      const data = await apiService.getCategories();
+      setCategories(data || []); // data.content가 아니라 data 직접 사용
     } catch (err) {
       console.error('카테고리 로딩 실패:', err);
     }
