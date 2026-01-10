@@ -20,6 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -41,12 +43,27 @@ public class RestockNotificationService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 중복 신청 체크
-        if (restockNotificationRepository.existsByUserAndProduct(user, product)) {
-            throw new BadRequestException(ErrorCode.DUPLICATE_NOTIFICATION_REQUEST);
+        // 기존 알림 신청 확인
+        Optional<RestockNotification> existingNotification =
+                restockNotificationRepository.findByProductIdAndUserId(product.getId(), user.getId());
+
+        if (existingNotification.isPresent()) {
+            RestockNotification notification = existingNotification.get();
+
+            // 이미 발송되지 않은 알림이 있으면 중복 에러
+            if (!notification.getIsNotified()) {
+                throw new BadRequestException(ErrorCode.DUPLICATE_NOTIFICATION_REQUEST);
+            }
+
+            // 이전에 발송된 알림이 있으면 재사용 (isNotified를 false로 초기화)
+            notification.setIsNotified(false);
+            RestockNotification savedNotification = restockNotificationRepository.save(notification);
+
+            log.info("재입고 알림 재신청: 사용자={}, 상품={}", email, product.getName());
+            return mapToResponse(savedNotification);
         }
 
-        // 알림 신청 생성
+        // 새로운 알림 신청 생성
         RestockNotification notification = RestockNotification.builder()
                 .user(user)
                 .product(product)
