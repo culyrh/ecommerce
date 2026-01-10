@@ -30,25 +30,38 @@ function SellerDashboardPage() {
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('ko-KR').format(price) + '원';
-  };
+  const formatPrice = (price = 0) =>
+    new Intl.NumberFormat('ko-KR').format(price) + '원';
 
-  const formatNumber = (num) => {
-    return new Intl.NumberFormat('ko-KR').format(num);
-  };
+  const formatNumber = (num = 0) =>
+    new Intl.NumberFormat('ko-KR').format(num);
 
-  if (loading) {
-    return <div style={styles.loading}>로딩 중...</div>;
-  }
-
-  if (error) {
+  if (loading) return <div style={styles.loading}>로딩 중...</div>;
+  if (error)
     return (
       <div style={styles.container}>
         <div style={styles.error}>{error}</div>
       </div>
     );
-  }
+
+  /* ===== 백엔드 DTO 기준 안전 매핑 ===== */
+  const todayOrders = dashboard.todayOrderCount ?? 0;
+  const todayRevenue = dashboard.todayRevenue ?? 0;
+
+  const averageRating =
+    dashboard.reviewStats?.averageRating ?? 0;
+
+  const totalProducts =
+    dashboard.totalProducts ?? 0; // 백엔드에 없으면 0 표시
+
+  const bestSellers =
+    dashboard.topSellingProducts ?? [];
+
+  const lowStockProducts =
+    dashboard.lowStockProducts ?? [];
+
+  const last30DaysRevenue =
+    dashboard.salesChart ?? [];
 
   return (
     <div style={styles.container}>
@@ -69,7 +82,7 @@ function SellerDashboardPage() {
           <div style={styles.statInfo}>
             <div style={styles.statLabel}>오늘 주문</div>
             <div style={styles.statValue}>
-              {formatNumber(dashboard.todayOrders)}건
+              {formatNumber(todayOrders)}건
             </div>
           </div>
         </div>
@@ -79,7 +92,7 @@ function SellerDashboardPage() {
           <div style={styles.statInfo}>
             <div style={styles.statLabel}>오늘 매출</div>
             <div style={styles.statValue}>
-              {formatPrice(dashboard.todayRevenue)}
+              {formatPrice(todayRevenue)}
             </div>
           </div>
         </div>
@@ -89,7 +102,7 @@ function SellerDashboardPage() {
           <div style={styles.statInfo}>
             <div style={styles.statLabel}>평균 평점</div>
             <div style={styles.statValue}>
-              {dashboard.averageRating.toFixed(1)}
+              {averageRating.toFixed(1)}
             </div>
           </div>
         </div>
@@ -99,7 +112,7 @@ function SellerDashboardPage() {
           <div style={styles.statInfo}>
             <div style={styles.statLabel}>총 상품</div>
             <div style={styles.statValue}>
-              {formatNumber(dashboard.totalProducts)}개
+              {formatNumber(totalProducts)}개
             </div>
           </div>
         </div>
@@ -108,50 +121,54 @@ function SellerDashboardPage() {
       {/* 베스트셀러 */}
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>베스트셀러 Top 5</h2>
-        {dashboard.bestSellers && dashboard.bestSellers.length > 0 ? (
+        {bestSellers.length > 0 ? (
           <div style={styles.bestSellerList}>
-            {dashboard.bestSellers.map((product, index) => (
-              <div key={product.id} style={styles.bestSellerCard}>
+            {bestSellers.map((product, index) => (
+              <div key={product.productId} style={styles.bestSellerCard}>
                 <div style={styles.rank}>#{index + 1}</div>
                 <div style={styles.productInfo}>
-                  <div style={styles.productName}>{product.name}</div>
+                  <div style={styles.productName}>
+                    {product.productName}
+                  </div>
                   <div style={styles.productMeta}>
-                    판매량: {formatNumber(product.salesCount)}개 | 
-                    재고: {formatNumber(product.stock)}개
+                    판매량: {formatNumber(product.salesCount)}개
                   </div>
                 </div>
                 <div style={styles.productPrice}>
-                  {formatPrice(product.price)}
+                  {formatPrice(product.revenue)}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div style={styles.emptyMessage}>
-            판매 데이터가 없습니다.
-          </div>
+          <div style={styles.emptyMessage}>판매 데이터가 없습니다.</div>
         )}
       </div>
 
       {/* 재고 부족 상품 */}
-      {dashboard.lowStockProducts && dashboard.lowStockProducts.length > 0 && (
+      {lowStockProducts.length > 0 && (
         <div style={styles.section}>
           <h2 style={styles.sectionTitle}>
-            ⚠️ 재고 부족 상품 ({dashboard.lowStockProducts.length})
+            ⚠️ 재고 부족 상품 ({lowStockProducts.length})
           </h2>
           <div style={styles.lowStockList}>
-            {dashboard.lowStockProducts.map(product => (
-              <div key={product.id} style={styles.lowStockCard}>
+            {lowStockProducts.map(product => (
+              <div key={product.productId} style={styles.lowStockCard}>
                 <div style={styles.productInfo}>
-                  <div style={styles.productName}>{product.name}</div>
+                  <div style={styles.productName}>
+                    {product.productName}
+                  </div>
                   <div style={styles.productMeta}>
-                    현재 재고: <span style={styles.dangerText}>
-                      {product.stock}개
+                    현재 재고:{' '}
+                    <span style={styles.dangerText}>
+                      {product.currentStock}개
                     </span>
                   </div>
                 </div>
                 <button
-                  onClick={() => navigate(`/seller/products/${product.id}/edit`)}
+                  onClick={() =>
+                    navigate(`/seller/products/${product.productId}/edit`)
+                  }
                   style={styles.actionButton}
                 >
                   재고 추가
@@ -163,25 +180,23 @@ function SellerDashboardPage() {
       )}
 
       {/* 최근 30일 매출 */}
-      {dashboard.last30DaysRevenue && dashboard.last30DaysRevenue.length > 0 && (
+      {last30DaysRevenue.length > 0 && (
         <div style={styles.section}>
           <h2 style={styles.sectionTitle}>최근 30일 매출</h2>
           <div style={styles.chartContainer}>
-            {dashboard.last30DaysRevenue.map((item, index) => {
+            {last30DaysRevenue.map((item, index) => {
               const maxRevenue = Math.max(
-                ...dashboard.last30DaysRevenue.map(d => d.revenue)
+                ...last30DaysRevenue.map(d => d.revenue)
               );
-              const height = maxRevenue > 0 
-                ? (item.revenue / maxRevenue) * 200 
-                : 0;
-              
+              const height =
+                maxRevenue > 0
+                  ? (item.revenue / maxRevenue) * 200
+                  : 0;
+
               return (
                 <div key={index} style={styles.barContainer}>
                   <div
-                    style={{
-                      ...styles.bar,
-                      height: `${height}px`,
-                    }}
+                    style={{ ...styles.bar, height: `${height}px` }}
                     title={`${item.date}: ${formatPrice(item.revenue)}`}
                   />
                   <div style={styles.barLabel}>
