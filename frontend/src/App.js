@@ -112,7 +112,7 @@ function Layout({ children }) {
                   )}
                 </Link>
 
-                {user.role === 'ROLE_USER' && (
+                {user.roles?.includes('ROLE_USER') && !user.roles?.includes('ROLE_SELLER') && (
                   <>
                     <Link to="/seller/register" style={styles.navLinkPrimary}>
                       판매자 되기
@@ -120,7 +120,7 @@ function Layout({ children }) {
                   </>
                 )}
 
-                {(user.role === 'ROLE_SELLER' || user.role === 'ROLE_ADMIN') && (
+                {(user.roles?.includes('ROLE_SELLER') || user.roles?.includes('ROLE_ADMIN')) && (
                   <>
                     <Link to="/seller/dashboard" style={styles.navLink}>
                       대시보드
@@ -256,9 +256,15 @@ function ProtectedRoute({ children, requiredRole }) {
   }
 
   // requiredRole이 지정된 경우, 권한 체크 후 리다이렉트
-  if (requiredRole && user.role !== requiredRole && user.role !== 'ROLE_ADMIN') {
-    alert('접근 권한이 없습니다.');
-    return <Navigate to="/" />;
+  if (requiredRole) {
+    // roles가 배열이므로 includes로 체크
+    const hasRequiredRole = user.roles?.includes(requiredRole);
+    const isAdmin = user.roles?.includes('ROLE_ADMIN');
+    
+    if (!hasRequiredRole && !isAdmin) {
+      alert('접근 권한이 없습니다.');
+      return <Navigate to="/" />;
+    }
   }
   
   return children;
