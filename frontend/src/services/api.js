@@ -388,6 +388,18 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  // 추가: Redis 기반 재입고 투표수 조회
+  async getRestockVoteCount(productId) {
+    const response = await fetch(
+      `${API_BASE_URL}/restock-votes/products/${productId}/count`,
+      {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }
+    );
+    return this.handleResponse(response);
+  }
+
   // ==================== NOTIFICATION ====================
   
   async getMyNotifications(page = 0, size = 20) {

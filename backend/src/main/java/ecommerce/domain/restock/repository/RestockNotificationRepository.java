@@ -32,4 +32,7 @@ public interface RestockNotificationRepository extends JpaRepository<RestockNoti
     Page<RestockNotification> findByProductOrderByCreatedAtDesc(Product product, Pageable pageable);
 
     List<RestockNotification> findByProductAndIsNotifiedFalse(Product product);
+
+    // 추가: isNotified=true인 알림 조회 (재입고 시 플래그 초기화용)
+    List<RestockNotification> findByProductIdAndIsNotifiedTrue(Long productId);
 }
