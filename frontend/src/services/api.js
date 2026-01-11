@@ -30,7 +30,7 @@ class ApiService {
       throw err;
     }
     
-    // 204 No Content ì²˜ë¦¬
+    // 204 No Content 처리
     if (response.status === 204) {
       return null;
     }
@@ -376,7 +376,7 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  // âœ… ìž¬ìž…ê³  ì•Œë¦¼ë§Œ ì·¨ì†Œ ê°€ëŠ¥ (íˆ¬í‘œëŠ” ì·¨ì†Œ ë¶ˆê°€)
+  // 재입고 알림만 취소 가능 (투표는 취소 불가)
   async cancelRestockNotification(id) {
     const response = await fetch(
       `${API_BASE_URL}/restock-notifications/${id}`,

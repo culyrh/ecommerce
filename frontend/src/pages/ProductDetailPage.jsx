@@ -21,6 +21,24 @@ function ProductDetailPage() {
     checkUser();
   }, [id]);
 
+  // 품절 상태일 때 투표수 자동 갱신 (폴링)
+  useEffect(() => {
+    let intervalId;
+    
+    // 상품이 품절 상태일 때만 5초마다 투표수 갱신
+    if (product && (product.status === 'OUT_OF_STOCK' || product.stock === 0 || !product.stock)) {
+      intervalId = setInterval(() => {
+        loadRestockVoteCount();
+      }, 5000); // 5초마다 갱신
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [product?.status, product?.stock, id]);
+
   const checkUser = async () => {
     const token = localStorage.getItem('accessToken');
     if (token) {
@@ -57,12 +75,16 @@ function ProductDetailPage() {
 
   const loadRestockVoteCount = async () => {
     try {
-      // 백엔드에 재입고 투표 수를 가져오는 API로 수정하기
-      // 현재는 투표 목록의 totalElements를 사용
       const response = await fetch(`http://54.206.243.31:8080/api/restock-votes/products/${id}?page=0&size=1`);
       if (response.ok) {
         const data = await response.json();
-        setRestockVoteCount(data.totalElements || 0);
+        const newCount = data.totalElements || 0;
+        
+        // 투표수가 변경된 경우에만 상태 업데이트
+        if (newCount !== restockVoteCount) {
+          setRestockVoteCount(newCount);
+          console.log('재입고 투표수 업데이트:', newCount);
+        }
       }
     } catch (err) {
       console.error('재입고 투표 수 로딩 실패:', err);
@@ -114,7 +136,6 @@ function ProductDetailPage() {
     });
   };
 
-  // ✅ 수정: voteForRestock 사용
   const handleRestockVote = async () => {
     if (!user) {
       alert('로그인이 필요합니다.');
@@ -125,7 +146,7 @@ function ProductDetailPage() {
     try {
       await apiService.voteForRestock(product.id);
       alert('재입고 투표가 완료되었습니다!');
-      loadRestockVoteCount(); // 투표 수 새로고침
+      loadRestockVoteCount(); // 투표 수 즉시 새로고침
     } catch (err) {
       if (err.code === 'DUPLICATE_VOTE') {
         alert('이미 투표하셨습니다.');
@@ -135,7 +156,6 @@ function ProductDetailPage() {
     }
   };
 
-  // 수정: subscribeRestock 사용
   const handleRestockNotification = async () => {
     if (!user) {
       alert('로그인이 필요합니다.');
