@@ -8,9 +8,9 @@ import ecommerce.domain.restock.repository.RestockVoteRepository;
 import ecommerce.infrastructure.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -36,7 +36,8 @@ public class RestockEventListener {
      * 2. 알림 플래그 초기화 (동기)
      * 3. 알림 발송 (비동기 호출) - productId 전달
      */
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
+    @Transactional
     public void handleProductRestocked(ProductRestockedEvent event) {
         log.info("=== 재입고 이벤트 수신: 상품ID={}, 이전재고={}, 현재재고={} ===",
                 event.getProductId(), event.getPreviousStock(), event.getCurrentStock());
