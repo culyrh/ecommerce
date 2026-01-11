@@ -30,7 +30,7 @@ public class RestockEventListener {
     /**
      * 재입고 이벤트 처리
      * 1. 투표 초기화 (동기)
-     * 2. 알림 발송 (비동기 호출)
+     * 2. 알림 발송 (비동기 호출) - productId 전달
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleProductRestocked(ProductRestockedEvent event) {
@@ -55,8 +55,9 @@ public class RestockEventListener {
         // 1. 투표 초기화 (동기 처리 - 강한 정합성)
         cleanupRestockVotes(product);
 
-        // 2. 알림 발송 (비동기 서비스 호출 - eventually consistent)
-        notificationAsyncService.sendNotifications(product);
+        // 2. 알림 발송 (비동기 서비스 호출 - productId만 전달)
+        // Product 엔티티 대신 productId를 전달하여 LAZY 로딩 문제 해결
+        notificationAsyncService.sendNotifications(event.getProductId());
     }
 
     /**
